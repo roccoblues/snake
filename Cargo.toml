@@ -7,5 +7,4 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.4"
-tui = "0.19"
 crossterm = "0.25"
