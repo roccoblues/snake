@@ -7,14 +7,13 @@ use crossterm::{
         disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
         LeaveAlternateScreen,
     },
-    tty::IsTty,
-    Command,
 };
+use int_enum::IntEnum;
 use rand::prelude::*;
-use std::io::{stdin, stdout, Write};
-use std::thread;
+use std::io::{stdout, Write};
 use std::time::Duration;
 
+#[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 enum Tile {
     Free,
@@ -23,11 +22,13 @@ enum Tile {
     Obstacle,
 }
 
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, IntEnum)]
 enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+    Up = 0,
+    Down = 1,
+    Left = 2,
+    Right = 3,
 }
 
 const ROWS: u16 = 15;
@@ -67,25 +68,77 @@ fn main() {
     // let mut map = [[Tile::Free; ROWS]; COLS];
 
     let mut rng = thread_rng();
-    let snake_start_x = rng.gen_range(1..=COLS - 2) as u16;
-    let snake_start_y = rng.gen_range(1..=ROWS - 1) as u16;
+    let mut snake_x = rng.gen_range(1..=COLS - 2) as u16;
+    let mut snake_y = rng.gen_range(1..=ROWS - 1) as u16;
+    let mut direction = Direction::from_int(rng.gen_range(0..=3) as u8).unwrap();
+    let mut prev_direction = direction;
+    let mut symbol: &str;
 
     // map[snake_start_x][snake_start_y] = Tile::Snake;
 
-    execute!(
-        stdout(),
-        cursor::MoveTo(snake_start_x, snake_start_y),
-        style::PrintStyledContent("▄▄".green())
-    )
-    .unwrap();
-
     loop {
-        if poll(Duration::from_millis(100)).unwrap() {
+        prev_direction = direction;
+
+        if poll(Duration::from_millis(200)).unwrap() {
             let event = read().unwrap();
             if event == Event::Key(KeyCode::Esc.into()) {
                 break;
             }
+            if event == Event::Key(KeyCode::Up.into()) {
+                direction = Direction::Up;
+            }
+            if event == Event::Key(KeyCode::Down.into()) {
+                direction = Direction::Down;
+            }
+            if event == Event::Key(KeyCode::Left.into()) {
+                direction = Direction::Left;
+            }
+            if event == Event::Key(KeyCode::Right.into()) {
+                direction = Direction::Right;
+            }
         }
+
+        match direction {
+            Direction::Up => {
+                symbol = "█";
+                if prev_direction == Direction::Up {
+                    snake_y -= 1;
+                } else if prev_direction == Direction::Right {
+                    snake_x += 1;
+                } else if prev_direction == Direction::Left {
+                    snake_x -= 1;
+                }
+            }
+            Direction::Down => {
+                symbol = "█";
+                snake_y += 1;
+                if prev_direction == Direction::Right {
+                    snake_x += 1;
+                } else if prev_direction == Direction::Left {
+                    snake_x -= 1;
+                }
+            }
+            Direction::Right => {
+                symbol = "▄▄";
+                snake_x += 1;
+                if prev_direction == Direction::Up {
+                    snake_y -= 1;
+                }
+            }
+            Direction::Left => {
+                symbol = "▄▄";
+                if prev_direction == Direction::Left {
+                    snake_x -= 1;
+                }
+            }
+        }
+
+        execute!(
+            stdout(),
+            cursor::MoveTo(snake_x, snake_y),
+            style::PrintStyledContent(symbol.green())
+        )
+        .unwrap();
     }
 
     execute!(stdout(), cursor::Show, LeaveAlternateScreen).unwrap();
