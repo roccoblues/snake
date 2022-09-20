@@ -76,6 +76,12 @@ impl Game {
         map[x as usize][y as usize] = Tile::Snake;
         snake.push_front(Point(x, y));
 
+        // spawn food
+        let x = rng.gen_range(1..=size - 2) as u16;
+        let y = rng.gen_range(1..=size - 2) as u16;
+        // TODO: check if empty
+        map[x as usize][y as usize] = Tile::Food;
+
         Game { map, snake }
     }
 
@@ -88,8 +94,12 @@ impl Game {
             Direction::Right => Point(prev.0 + 1, prev.1),
         };
 
-        let tail = self.snake.pop_back().unwrap();
-        self.map[tail.x()][tail.y()] = Tile::Free;
+        if self.map[next.x()][next.y()] == Tile::Food {
+            self.spawn_food();
+        } else {
+            let tail = self.snake.pop_back().unwrap();
+            self.map[tail.x()][tail.y()] = Tile::Free;
+        }
 
         if self.map[next.x()][next.y()] == Tile::Obstacle {
             self.map[next.x()][next.y()] = Tile::Crash;
@@ -99,6 +109,15 @@ impl Game {
             self.map[next.x()][next.y()] = Tile::Snake;
         }
         Ok(())
+    }
+
+    fn spawn_food(&mut self) {
+        let size = self.map.len();
+        let mut rng = thread_rng();
+        let x = rng.gen_range(1..=size - 2) as u16;
+        let y = rng.gen_range(1..=size - 2) as u16;
+        // TODO: check if empty
+        self.map[x as usize][y as usize] = Tile::Food;
     }
 }
 
