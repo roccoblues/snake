@@ -1,6 +1,5 @@
 use crossterm::event::{poll, read, Event, KeyCode};
 use game::{random_direction, Direction, Game};
-use std::error::Error;
 use std::time::Duration;
 
 mod game;
