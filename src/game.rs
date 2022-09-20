@@ -142,6 +142,7 @@ impl Game {
         };
         game.spawn_snake();
         game.spawn_food();
+        game.spawn_obstacles();
         game
     }
 
@@ -174,6 +175,12 @@ impl Game {
     fn spawn_snake(&mut self) {
         let point = self.map.set_random_empty_point(3, Tile::Snake);
         self.snake.grow_head(point);
+    }
+
+    fn spawn_obstacles(&mut self) {
+        for _ in 0..=self.map.size / 3 {
+            self.map.set_random_empty_point(0, Tile::Obstacle);
+        }
     }
 }
 
