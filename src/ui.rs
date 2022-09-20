@@ -1,9 +1,7 @@
-use crate::game::{Map, Tile};
+use crate::game::Tile;
 use crossterm::{
     cursor, execute, queue, style,
-    style::Attribute,
-    style::StyledContent,
-    style::Stylize,
+    style::{Attribute, StyledContent, Stylize},
     terminal::{
         disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
         LeaveAlternateScreen,
@@ -29,10 +27,10 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(map: &Map) -> crossterm::Result<()> {
+pub fn draw(map: &Vec<Vec<Tile>>) -> crossterm::Result<()> {
     debug!("{:?}", map);
     queue!(stdout(), cursor::MoveTo(0, 0))?;
-    for (x, v) in map.tiles().iter().enumerate() {
+    for (x, v) in map.iter().enumerate() {
         for (y, tile) in v.iter().enumerate() {
             queue!(
                 stdout(),

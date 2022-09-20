@@ -1,5 +1,5 @@
 use crossterm::event::{poll, read, Event, KeyCode};
-use game::{random_direction, Direction, Map};
+use game::{random_direction, Direction, Game};
 use std::error::Error;
 use std::time::Duration;
 
@@ -13,14 +13,17 @@ fn main() {
 
     ui::init().unwrap();
 
-    let mut map = Map::new(SIZE);
-    ui::draw(&map).unwrap();
+    let mut game = Game::new(SIZE);
+    ui::draw(&game.map).unwrap();
 
     let mut direction = random_direction().unwrap();
+    let mut crash = false;
 
     loop {
-        map.advance_snake(direction);
-        ui::draw(&map).unwrap();
+        if !crash {
+            crash = !game.advance_snake(direction).is_ok();
+            ui::draw(&game.map).unwrap();
+        }
 
         if poll(Duration::from_millis(200)).unwrap() {
             let event = read().unwrap();
