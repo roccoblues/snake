@@ -22,7 +22,6 @@ pub enum Direction {
     Right = 3,
 }
 
-#[derive(Debug, Copy, Clone)]
 pub struct Point(u16, u16);
 
 impl Point {
@@ -48,7 +47,6 @@ impl fmt::Display for Error {
     }
 }
 
-#[derive(Debug)]
 struct Snake {
     body: VecDeque<Point>,
 }
@@ -83,63 +81,37 @@ impl Snake {
     }
 }
 
-#[derive(Debug)]
-pub struct Game {
-    pub map: Vec<Vec<Tile>>,
-    snake: Snake,
+pub struct Map {
+    tiles: Vec<Vec<Tile>>,
     size: u16,
 }
 
-impl Game {
-    pub fn new(size: u16) -> Game {
-        let mut game = Game {
-            size,
-            map: vec![vec![Tile::Free; size as usize]; size as usize],
-            snake: Snake::new(),
-        };
-        game.initialize_map();
-        game.spawn_snake();
-        game.spawn_food();
-        game
+impl Map {
+    fn new(size: u16) -> Map {
+        let mut tiles = vec![vec![Tile::Free; size as usize]; size as usize];
+        for x in 0..=size - 1 {
+            for y in 0..=size - 1 {
+                let tile = if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
+                    Tile::Obstacle
+                } else {
+                    Tile::Free
+                };
+                tiles[x as usize][y as usize] = tile;
+            }
+        }
+        Map { tiles, size }
     }
 
-    pub fn advance_snake(&mut self, direction: Direction) -> Result<(), Error> {
-        let next = self.snake.next(direction);
-        let next_tile = self.tile(&next);
-
-        if next_tile == Tile::Obstacle || next_tile == Tile::Snake {
-            self.set_tile(next, Tile::Crash);
-            return Err(Error::SnakeCrash);
-        }
-
-        if next_tile == Tile::Food {
-            self.spawn_food()
-        } else {
-            let tail = self.snake.remove_tail();
-            self.set_tile(tail, Tile::Free);
-        }
-
-        self.snake.grow_head(next);
-        self.set_tile(next, Tile::Snake);
-
-        Ok(())
+    pub fn tiles(&self) -> &Vec<Vec<Tile>> {
+        &self.tiles
     }
 
     fn tile(&self, point: &Point) -> Tile {
-        self.map[point.x()][point.y()]
+        self.tiles[point.x()][point.y()]
     }
 
-    fn set_tile(&mut self, point: Point, tile: Tile) {
-        self.map[point.x()][point.y()] = tile;
-    }
-
-    fn spawn_food(&mut self) {
-        self.set_random_empty_point(1, self.size - 2, Tile::Food);
-    }
-
-    fn spawn_snake(&mut self) {
-        let point = self.set_random_empty_point(2, self.size - 3, Tile::Snake);
-        self.snake.grow_head(point);
+    fn set_tile(&mut self, point: &Point, tile: Tile) {
+        self.tiles[point.x()][point.y()] = tile;
     }
 
     fn set_random_empty_point(&mut self, min: u16, max: u16, tile: Tile) -> Point {
@@ -152,21 +124,59 @@ impl Game {
                 break point;
             }
         };
-        self.set_tile(point, tile);
+        self.set_tile(&point, tile);
         point
     }
+}
 
-    fn initialize_map(&mut self) {
-        for x in 0..=self.size - 1 {
-            for y in 0..=self.size - 1 {
-                let tile = if x == 0 || y == 0 || x == self.size - 1 || y == self.size - 1 {
-                    Tile::Obstacle
-                } else {
-                    Tile::Free
-                };
-                self.map[x as usize][y as usize] = tile;
-            }
+pub struct Game {
+    pub map: Map,
+    snake: Snake,
+}
+
+impl Game {
+    pub fn new(size: u16) -> Game {
+        let mut game = Game {
+            map: Map::new(size),
+            snake: Snake::new(),
+        };
+        game.spawn_snake();
+        game.spawn_food();
+        game
+    }
+
+    pub fn advance_snake(&mut self, direction: Direction) -> Result<(), Error> {
+        let next = self.snake.next(direction);
+        let next_tile = self.map.tile(&next);
+
+        if next_tile == Tile::Obstacle || next_tile == Tile::Snake {
+            self.map.set_tile(&next, Tile::Crash);
+            return Err(Error::SnakeCrash);
         }
+
+        if next_tile == Tile::Food {
+            self.spawn_food()
+        } else {
+            let tail = self.snake.remove_tail();
+            self.map.set_tile(&tail, Tile::Free);
+        }
+
+        self.map.set_tile(&next, Tile::Snake);
+        self.snake.grow_head(next);
+
+        Ok(())
+    }
+
+    fn spawn_food(&mut self) {
+        self.map
+            .set_random_empty_point(1, self.map.size - 2, Tile::Food);
+    }
+
+    fn spawn_snake(&mut self) {
+        let point = self
+            .map
+            .set_random_empty_point(2, self.map.size - 3, Tile::Snake);
+        self.snake.grow_head(point);
     }
 }
 

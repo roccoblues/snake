@@ -11,7 +11,7 @@ fn main() {
     ui::init().unwrap();
 
     let mut game = Game::new(SIZE);
-    ui::draw(&game.map).unwrap();
+    ui::draw(&game.map.tiles()).unwrap();
 
     let mut direction = random_direction().unwrap();
     let mut crash = false;
@@ -19,10 +19,10 @@ fn main() {
     loop {
         if !crash {
             crash = !game.advance_snake(direction).is_ok();
-            ui::draw(&game.map).unwrap();
+            ui::draw(&game.map.tiles()).unwrap();
         }
 
-        if poll(Duration::from_millis(200)).unwrap() {
+        if poll(Duration::from_millis(150)).unwrap() {
             let event = read().unwrap();
             if event == Event::Key(KeyCode::Esc.into()) {
                 break;
