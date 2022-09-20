@@ -7,7 +7,6 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-use log::debug;
 use std::io::{stdout, Write};
 
 pub fn init() -> crossterm::Result<()> {
@@ -28,7 +27,6 @@ pub fn reset() -> crossterm::Result<()> {
 }
 
 pub fn draw(map: &Vec<Vec<Tile>>) -> crossterm::Result<()> {
-    debug!("{:?}", map);
     queue!(stdout(), cursor::MoveTo(0, 0))?;
     for (x, v) in map.iter().enumerate() {
         for (y, tile) in v.iter().enumerate() {

@@ -8,8 +8,6 @@ mod ui;
 const SIZE: u16 = 20;
 
 fn main() {
-    env_logger::init();
-
     ui::init().unwrap();
 
     let mut game = Game::new(SIZE);
