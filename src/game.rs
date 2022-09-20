@@ -69,18 +69,15 @@ impl Game {
         }
 
         // spawn snake
-        let mut rng = thread_rng();
+        let point = random_point(2, size - 3);
         let mut snake = VecDeque::new();
-        let x = rng.gen_range(2..=size - 3) as u16;
-        let y = rng.gen_range(2..=size - 3) as u16;
-        map[x as usize][y as usize] = Tile::Snake;
-        snake.push_front(Point(x, y));
+        map[point.x()][point.y()] = Tile::Snake;
+        snake.push_front(point);
 
         // spawn food
-        let x = rng.gen_range(1..=size - 2) as u16;
-        let y = rng.gen_range(1..=size - 2) as u16;
+        let point = random_point(1, size - 2);
         // TODO: check if empty
-        map[x as usize][y as usize] = Tile::Food;
+        map[point.x()][point.y()] = Tile::Food;
 
         Game { map, snake }
     }
@@ -97,7 +94,7 @@ impl Game {
         let next_tile = self.tile(&next);
 
         if next_tile == Tile::Obstacle || next_tile == Tile::Snake {
-            self.set_tile(&next, Tile::Crash);
+            self.set_tile(next, Tile::Crash);
             return Err(Error::SnakeCrash);
         }
 
@@ -105,11 +102,11 @@ impl Game {
             self.spawn_food();
         } else {
             let tail = self.snake.pop_back().unwrap();
-            self.set_tile(&tail, Tile::Free);
+            self.set_tile(tail, Tile::Free);
         }
 
         self.snake.push_front(Point(next.0, next.1));
-        self.set_tile(&next, Tile::Snake);
+        self.set_tile(next, Tile::Snake);
 
         Ok(())
     }
@@ -118,21 +115,25 @@ impl Game {
         self.map[point.x()][point.y()]
     }
 
-    fn set_tile(&mut self, point: &Point, tile: Tile) {
+    fn set_tile(&mut self, point: Point, tile: Tile) {
         self.map[point.x()][point.y()] = tile;
     }
 
     fn spawn_food(&mut self) {
-        let size = self.map.len();
-        let mut rng = thread_rng();
-        let x = rng.gen_range(1..=size - 2) as u16;
-        let y = rng.gen_range(1..=size - 2) as u16;
-        // TODO: check if empty
-        self.set_tile(&Point(x, y), Tile::Food);
+        let size = self.map.len() as u16;
+        let point = random_point(1, size - 2);
+        self.set_tile(point, Tile::Food);
     }
 }
 
 pub fn random_direction() -> Result<Direction, IntEnumError<Direction>> {
     let mut rng = thread_rng();
     Direction::from_int(rng.gen_range(0..=3) as u8)
+}
+
+fn random_point(min: u16, max: u16) -> Point {
+    let mut rng = thread_rng();
+    let x = rng.gen_range(min..=max) as u16;
+    let y = rng.gen_range(min..=max) as u16;
+    Point(x, y)
 }
