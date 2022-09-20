@@ -114,11 +114,11 @@ impl Map {
         self.tiles[point.x()][point.y()] = tile;
     }
 
-    fn set_random_empty_point(&mut self, min: u16, max: u16, tile: Tile) -> Point {
+    fn set_random_empty_point(&mut self, distance: u16, tile: Tile) -> Point {
         let mut rng = thread_rng();
         let point = loop {
-            let x = rng.gen_range(min..=max) as u16;
-            let y = rng.gen_range(min..=max) as u16;
+            let x = rng.gen_range(distance + 1..=self.size - distance - 1) as u16;
+            let y = rng.gen_range(distance + 1..=self.size - distance - 1) as u16;
             let point = Point(x, y);
             if self.tile(&point) == Tile::Free {
                 break point;
@@ -168,14 +168,11 @@ impl Game {
     }
 
     fn spawn_food(&mut self) {
-        self.map
-            .set_random_empty_point(1, self.map.size - 2, Tile::Food);
+        self.map.set_random_empty_point(0, Tile::Food);
     }
 
     fn spawn_snake(&mut self) {
-        let point = self
-            .map
-            .set_random_empty_point(2, self.map.size - 3, Tile::Snake);
+        let point = self.map.set_random_empty_point(3, Tile::Snake);
         self.snake.grow_head(point);
     }
 }
