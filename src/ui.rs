@@ -27,25 +27,31 @@ pub fn reset() -> crossterm::Result<()> {
 }
 
 pub fn draw(map: &Vec<Vec<Tile>>) -> crossterm::Result<()> {
-    queue!(stdout(), cursor::MoveTo(0, 0))?;
+    let size = map.len();
     for (x, v) in map.iter().enumerate() {
         for (y, tile) in v.iter().enumerate() {
             queue!(
                 stdout(),
                 cursor::MoveTo(x as u16 * 2, y as u16),
-                style::PrintStyledContent(tile_to_symbol(tile))
+                style::PrintStyledContent(tile_to_symbol(x, y, size, tile))
             )?
         }
     }
     stdout().flush()
 }
 
-pub fn tile_to_symbol(tile: &Tile) -> StyledContent<&str> {
+pub fn tile_to_symbol(x: usize, y: usize, size: usize, tile: &Tile) -> StyledContent<&str> {
     match tile {
         Tile::Free => "  ".attribute(Attribute::Reset),
         Tile::Snake => "██".green(),
-        Tile::Food => "░░".yellow(),
-        Tile::Obstacle => "▓▓".white(),
-        Tile::Crash => "××".red(),
+        Tile::Food => "██".yellow(),
+        Tile::Obstacle => {
+            if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
+                "=".magenta()
+            } else {
+                "▓▓".white()
+            }
+        }
+        Tile::Crash => "××".red().on_white(),
     }
 }
