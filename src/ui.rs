@@ -46,8 +46,27 @@ pub fn tile_to_symbol(x: usize, y: usize, size: usize, tile: &Tile) -> StyledCon
         Tile::Snake => "██".green(),
         Tile::Food => "██".yellow(),
         Tile::Obstacle => {
-            if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
-                "=".magenta()
+            if x == 0 {
+                // first column
+                if y == 0 {
+                    "╔══".magenta()
+                } else if y == size - 1 {
+                    "╚══".magenta()
+                } else {
+                    "║".magenta()
+                }
+            } else if x == size - 1 {
+                // last column
+                if y == 0 {
+                    "╗".magenta()
+                } else if y == size - 1 {
+                    "╝".magenta()
+                } else {
+                    "║".magenta()
+                }
+            } else if (y == 0 || y == size - 1) && (x > 0 || x < size - 1) {
+                // fill first+last row
+                "══".magenta()
             } else {
                 "▓▓".white()
             }
