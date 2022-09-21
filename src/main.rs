@@ -1,5 +1,5 @@
 use crossterm::event::{poll, read, Event, KeyCode};
-use game::{random_direction, Direction, Game};
+use game::{Direction, Error, Game};
 use std::time::Duration;
 
 mod game;
@@ -11,34 +11,33 @@ fn main() {
     ui::init().unwrap();
 
     let mut game = Game::new(SIZE);
-    ui::draw(&game.map.tiles()).unwrap();
+    ui::draw(&game.tiles()).unwrap();
 
-    let mut direction = random_direction().unwrap();
     let mut crash = false;
 
     loop {
         if !crash {
-            crash = !game.advance_snake(direction).is_ok();
-            ui::draw(&game.map.tiles()).unwrap();
+            match game.step() {
+                Ok(_) => {}
+                Err(Error::SnakeCrash) => crash = true,
+                Err(_) => {}
+            }
+            ui::draw(&game.tiles()).unwrap();
         }
 
         if poll(Duration::from_millis(150)).unwrap() {
             let event = read().unwrap();
             if event == Event::Key(KeyCode::Esc.into()) {
                 break;
-            }
-            if event == Event::Key(KeyCode::Up.into()) {
-                direction = Direction::Up;
-            }
-            if event == Event::Key(KeyCode::Down.into()) {
-                direction = Direction::Down;
-            }
-            if event == Event::Key(KeyCode::Left.into()) {
-                direction = Direction::Left;
-            }
-            if event == Event::Key(KeyCode::Right.into()) {
-                direction = Direction::Right;
-            }
+            } else if event == Event::Key(KeyCode::Up.into()) {
+                game.change_direction(Direction::Up).ok();
+            } else if event == Event::Key(KeyCode::Down.into()) {
+                game.change_direction(Direction::Down).ok();
+            } else if event == Event::Key(KeyCode::Left.into()) {
+                game.change_direction(Direction::Left).ok();
+            } else if event == Event::Key(KeyCode::Right.into()) {
+                game.change_direction(Direction::Right).ok();
+            };
         }
     }
 

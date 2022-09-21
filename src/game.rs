@@ -22,6 +22,17 @@ pub enum Direction {
     Right = 3,
 }
 
+impl Direction {
+    fn opposite(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+        }
+    }
+}
+
 pub struct Point(u16, u16);
 
 impl Point {
@@ -37,24 +48,28 @@ impl Point {
 #[derive(Debug)]
 pub enum Error {
     SnakeCrash,
+    InvalidDirection,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::SnakeCrash => f.write_str("The Snake crashed."),
+            Error::InvalidDirection => f.write_str("Invalid direction."),
         }
     }
 }
 
 struct Snake {
     body: VecDeque<Point>,
+    direction: Direction,
 }
 
 impl Snake {
     fn new() -> Snake {
         Snake {
             body: VecDeque::new(),
+            direction: random_direction().unwrap(),
         }
     }
 
@@ -66,22 +81,19 @@ impl Snake {
         self.body.pop_back().unwrap()
     }
 
-    fn next(&self, direction: Direction) -> Point {
+    fn advance(&mut self) {
         let head = self.head();
-        match direction {
+        let next = match self.direction {
             Direction::Up => Point(head.0, head.1 - 1),
             Direction::Down => Point(head.0, head.1 + 1),
             Direction::Left => Point(head.0 - 1, head.1),
             Direction::Right => Point(head.0 + 1, head.1),
-        }
-    }
-
-    fn grow_head(&mut self, point: Point) {
-        self.body.push_front(point);
+        };
+        self.body.push_front(next);
     }
 }
 
-pub struct Map {
+struct Map {
     tiles: Vec<Vec<Tile>>,
     size: u16,
 }
@@ -100,10 +112,6 @@ impl Map {
             }
         }
         Map { tiles, size }
-    }
-
-    pub fn tiles(&self) -> &Vec<Vec<Tile>> {
-        &self.tiles
     }
 
     fn tile(&self, point: &Point) -> Tile {
@@ -130,7 +138,7 @@ impl Map {
 }
 
 pub struct Game {
-    pub map: Map,
+    map: Map,
     snake: Snake,
 }
 
@@ -146,25 +154,35 @@ impl Game {
         game
     }
 
-    pub fn advance_snake(&mut self, direction: Direction) -> Result<(), Error> {
-        let next = self.snake.next(direction);
-        let next_tile = self.map.tile(&next);
+    pub fn step(&mut self) -> Result<(), Error> {
+        self.snake.advance();
 
-        if next_tile == Tile::Obstacle || next_tile == Tile::Snake {
-            self.map.set_tile(&next, Tile::Crash);
-            return Err(Error::SnakeCrash);
+        match self.map.tile(self.snake.head()) {
+            Tile::Obstacle | Tile::Snake => {
+                self.map.set_tile(self.snake.head(), Tile::Crash);
+                return Err(Error::SnakeCrash);
+            }
+            Tile::Food => self.spawn_food(),
+            _ => {
+                let tail = self.snake.remove_tail();
+                self.map.set_tile(&tail, Tile::Free);
+            }
         }
 
-        if next_tile == Tile::Food {
-            self.spawn_food()
-        } else {
-            let tail = self.snake.remove_tail();
-            self.map.set_tile(&tail, Tile::Free);
+        self.map.set_tile(self.snake.head(), Tile::Snake);
+
+        Ok(())
+    }
+
+    pub fn tiles(&self) -> &Vec<Vec<Tile>> {
+        &self.map.tiles
+    }
+
+    pub fn change_direction(&mut self, direction: Direction) -> Result<(), Error> {
+        if self.snake.direction.opposite() == direction {
+            return Err(Error::InvalidDirection);
         }
-
-        self.map.set_tile(&next, Tile::Snake);
-        self.snake.grow_head(next);
-
+        self.snake.direction = direction;
         Ok(())
     }
 
@@ -174,7 +192,7 @@ impl Game {
 
     fn spawn_snake(&mut self) {
         let point = self.map.set_random_empty_point(3, Tile::Snake);
-        self.snake.grow_head(point);
+        self.snake.body.push_front(point);
     }
 
     fn spawn_obstacles(&mut self) {
@@ -184,7 +202,7 @@ impl Game {
     }
 }
 
-pub fn random_direction() -> Result<Direction, IntEnumError<Direction>> {
+fn random_direction() -> Result<Direction, IntEnumError<Direction>> {
     let mut rng = thread_rng();
     Direction::from_int(rng.gen_range(0..=3) as u8)
 }
