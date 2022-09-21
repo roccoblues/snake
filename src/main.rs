@@ -5,7 +5,7 @@ use std::time::Duration;
 mod game;
 mod ui;
 
-const SIZE: u16 = 20;
+const SIZE: u16 = 25;
 
 fn main() {
     ui::init().unwrap();
