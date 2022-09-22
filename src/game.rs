@@ -122,18 +122,16 @@ impl Map {
         self.tiles[point.x()][point.y()] = tile;
     }
 
-    fn set_random_empty_point(&mut self, distance: u16, tile: Tile) -> Point {
+    fn random_empty_point(&self, distance: u16) -> Point {
         let mut rng = thread_rng();
-        let point = loop {
+        loop {
             let x = rng.gen_range(distance + 1..=self.size - distance - 1) as u16;
             let y = rng.gen_range(distance + 1..=self.size - distance - 1) as u16;
             let point = Point(x, y);
             if self.tile(&point) == Tile::Free {
                 break point;
             }
-        };
-        self.set_tile(&point, tile);
-        point
+        }
     }
 }
 
@@ -187,17 +185,20 @@ impl Game {
     }
 
     fn spawn_food(&mut self) {
-        self.map.set_random_empty_point(0, Tile::Food);
+        self.map
+            .set_tile(&self.map.random_empty_point(0), Tile::Food);
     }
 
     fn spawn_snake(&mut self) {
-        let point = self.map.set_random_empty_point(3, Tile::Snake);
+        let point = self.map.random_empty_point(3);
+        self.map.set_tile(&point, Tile::Snake);
         self.snake.body.push_front(point);
     }
 
     fn spawn_obstacles(&mut self) {
         for _ in 0..=self.map.size / 3 {
-            self.map.set_random_empty_point(0, Tile::Obstacle);
+            self.map
+                .set_tile(&self.map.random_empty_point(0), Tile::Obstacle);
         }
     }
 }
