@@ -36,12 +36,11 @@ impl Direction {
 pub struct Point(u16, u16);
 
 impl Point {
-    pub fn x(&self) -> usize {
-        self.0 as usize
+    pub fn x(&self) -> u16 {
+        self.0
     }
-
-    pub fn y(&self) -> usize {
-        self.1 as usize
+    pub fn y(&self) -> u16 {
+        self.1
     }
 }
 
@@ -100,7 +99,7 @@ struct Map {
 
 impl Map {
     fn new(size: u16) -> Map {
-        let mut tiles = vec![vec![Tile::Free; size as usize]; size as usize];
+        let mut tiles = vec![vec![Tile::Free; size.into()]; size.into()];
         for x in 0..=size - 1 {
             for y in 0..=size - 1 {
                 let tile = if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
@@ -115,11 +114,11 @@ impl Map {
     }
 
     fn tile(&self, point: &Point) -> Tile {
-        self.tiles[point.x()][point.y()]
+        self.tiles[point.x() as usize][point.y() as usize]
     }
 
     fn set_tile(&mut self, point: &Point, tile: Tile) {
-        self.tiles[point.x()][point.y()] = tile;
+        self.tiles[point.x() as usize][point.y() as usize] = tile;
     }
 
     fn random_empty_point(&self, distance: u16) -> Point {
