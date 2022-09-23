@@ -33,17 +33,6 @@ impl Direction {
     }
 }
 
-pub struct Point(u16, u16);
-
-impl Point {
-    pub fn x(&self) -> u16 {
-        self.0
-    }
-    pub fn y(&self) -> u16 {
-        self.1
-    }
-}
-
 #[derive(Debug)]
 pub enum Error {
     SnakeCrash,
@@ -60,7 +49,7 @@ impl fmt::Display for Error {
 }
 
 struct Snake {
-    body: VecDeque<Point>,
+    body: VecDeque<(u16, u16)>,
     direction: Direction,
 }
 
@@ -72,23 +61,22 @@ impl Snake {
         }
     }
 
-    fn head(&self) -> &Point {
-        self.body.front().unwrap()
+    fn head(&self) -> (u16, u16) {
+        *self.body.front().unwrap()
     }
 
-    fn remove_tail(&mut self) -> Point {
+    fn remove_tail(&mut self) -> (u16, u16) {
         self.body.pop_back().unwrap()
     }
 
     fn advance(&mut self) {
-        let head = self.head();
-        let next = match self.direction {
-            Direction::Up => Point(head.0, head.1 - 1),
-            Direction::Down => Point(head.0, head.1 + 1),
-            Direction::Left => Point(head.0 - 1, head.1),
-            Direction::Right => Point(head.0 + 1, head.1),
-        };
-        self.body.push_front(next);
+        let (x, y) = self.head();
+        self.body.push_front(match self.direction {
+            Direction::Up => (x, y - 1),
+            Direction::Down => (x, y + 1),
+            Direction::Left => (x - 1, y),
+            Direction::Right => (x + 1, y),
+        })
     }
 }
 
@@ -113,22 +101,21 @@ impl Map {
         Map { tiles, size }
     }
 
-    fn tile(&self, point: &Point) -> Tile {
-        self.tiles[point.x() as usize][point.y() as usize]
+    fn tile(&self, x: u16, y: u16) -> Tile {
+        self.tiles[x as usize][y as usize]
     }
 
-    fn set_tile(&mut self, point: &Point, tile: Tile) {
-        self.tiles[point.x() as usize][point.y() as usize] = tile;
+    fn set_tile(&mut self, x: u16, y: u16, tile: Tile) {
+        self.tiles[x as usize][y as usize] = tile;
     }
 
-    fn random_empty_point(&self, distance: u16) -> Point {
+    fn random_empty_point(&self, distance: u16) -> (u16, u16) {
         let mut rng = thread_rng();
         loop {
             let x = rng.gen_range(distance + 1..=self.size - distance - 1) as u16;
             let y = rng.gen_range(distance + 1..=self.size - distance - 1) as u16;
-            let point = Point(x, y);
-            if self.tile(&point) == Tile::Free {
-                break point;
+            if self.tile(x, y) == Tile::Free {
+                break (x, y);
             }
         }
     }
@@ -154,19 +141,20 @@ impl Game {
     pub fn step(&mut self) -> Result<(), Error> {
         self.snake.advance();
 
-        match self.map.tile(self.snake.head()) {
+        let (head_x, head_y) = self.snake.head();
+        match self.map.tile(head_x, head_y) {
             Tile::Obstacle | Tile::Snake => {
-                self.map.set_tile(self.snake.head(), Tile::Crash);
+                self.map.set_tile(head_x, head_y, Tile::Crash);
                 return Err(Error::SnakeCrash);
             }
             Tile::Food => self.spawn_food(),
             _ => {
-                let tail = self.snake.remove_tail();
-                self.map.set_tile(&tail, Tile::Free);
+                let (tail_x, tail_y) = self.snake.remove_tail();
+                self.map.set_tile(tail_x, tail_y, Tile::Free);
             }
         }
 
-        self.map.set_tile(self.snake.head(), Tile::Snake);
+        self.map.set_tile(head_x, head_y, Tile::Snake);
 
         Ok(())
     }
@@ -184,20 +172,20 @@ impl Game {
     }
 
     fn spawn_food(&mut self) {
-        self.map
-            .set_tile(&self.map.random_empty_point(0), Tile::Food);
+        let (x, y) = self.map.random_empty_point(0);
+        self.map.set_tile(x, y, Tile::Food);
     }
 
     fn spawn_snake(&mut self) {
-        let point = self.map.random_empty_point(3);
-        self.map.set_tile(&point, Tile::Snake);
-        self.snake.body.push_front(point);
+        let (x, y) = self.map.random_empty_point(3);
+        self.map.set_tile(x, y, Tile::Snake);
+        self.snake.body.push_front((x, y));
     }
 
     fn spawn_obstacles(&mut self) {
         for _ in 0..=self.map.size / 3 {
-            self.map
-                .set_tile(&self.map.random_empty_point(0), Tile::Obstacle);
+            let (x, y) = self.map.random_empty_point(0);
+            self.map.set_tile(x, y, Tile::Obstacle);
         }
     }
 }
