@@ -54,9 +54,11 @@ struct Snake {
 }
 
 impl Snake {
-    fn new() -> Snake {
+    fn new(x: u16, y: u16) -> Snake {
+        let mut body = VecDeque::new();
+        body.push_front((x, y));
         Snake {
-            body: VecDeque::new(),
+            body,
             direction: random_direction().unwrap(),
         }
     }
@@ -109,6 +111,24 @@ impl Map {
         self.tiles[x as usize][y as usize] = tile;
     }
 
+    fn spawn_food(&mut self) {
+        let (x, y) = self.random_empty_point(0);
+        self.set_tile(x, y, Tile::Food);
+    }
+
+    fn spawn_obstacles(&mut self) {
+        for _ in 0..=self.size / 3 {
+            let (x, y) = self.random_empty_point(0);
+            self.set_tile(x, y, Tile::Obstacle);
+        }
+    }
+
+    fn spawn_snake(&mut self) -> (u16, u16) {
+        let (x, y) = self.random_empty_point(3);
+        self.set_tile(x, y, Tile::Snake);
+        (x, y)
+    }
+
     fn random_empty_point(&self, distance: u16) -> (u16, u16) {
         let mut rng = thread_rng();
         loop {
@@ -128,14 +148,12 @@ pub struct Game {
 
 impl Game {
     pub fn new(size: u16) -> Game {
-        let mut game = Game {
-            map: Map::new(size),
-            snake: Snake::new(),
-        };
-        game.spawn_snake();
-        game.spawn_food();
-        game.spawn_obstacles();
-        game
+        let mut map = Map::new(size);
+        map.spawn_food();
+        map.spawn_obstacles();
+        let (x, y) = map.spawn_snake();
+        let snake = Snake::new(x, y);
+        Game { map, snake }
     }
 
     pub fn step(&mut self) -> Result<(), Error> {
@@ -147,7 +165,7 @@ impl Game {
                 self.map.set_tile(head_x, head_y, Tile::Crash);
                 return Err(Error::SnakeCrash);
             }
-            Tile::Food => self.spawn_food(),
+            Tile::Food => self.map.spawn_food(),
             _ => {
                 let (tail_x, tail_y) = self.snake.remove_tail();
                 self.map.set_tile(tail_x, tail_y, Tile::Free);
@@ -169,24 +187,6 @@ impl Game {
         }
         self.snake.direction = direction;
         Ok(())
-    }
-
-    fn spawn_food(&mut self) {
-        let (x, y) = self.map.random_empty_point(0);
-        self.map.set_tile(x, y, Tile::Food);
-    }
-
-    fn spawn_snake(&mut self) {
-        let (x, y) = self.map.random_empty_point(3);
-        self.map.set_tile(x, y, Tile::Snake);
-        self.snake.body.push_front((x, y));
-    }
-
-    fn spawn_obstacles(&mut self) {
-        for _ in 0..=self.map.size / 3 {
-            let (x, y) = self.map.random_empty_point(0);
-            self.map.set_tile(x, y, Tile::Obstacle);
-        }
     }
 }
 
