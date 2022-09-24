@@ -18,9 +18,8 @@ fn main() {
     loop {
         if !crash {
             match game.step() {
-                Ok(_) => {}
                 Err(Error::SnakeCrash) => crash = true,
-                Err(_) => {}
+                _ => {}
             }
             ui::draw(&game.tiles()).unwrap();
         }
