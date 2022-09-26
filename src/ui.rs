@@ -26,7 +26,7 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(map: &Vec<Vec<Tile>>) -> crossterm::Result<()> {
+pub fn draw_map(map: &Vec<Vec<Tile>>) -> crossterm::Result<()> {
     let (rows, cols) = size()?;
     let map_size = map.len() as u16;
     let x_adjust = (rows - map_size * 2) / 2;
