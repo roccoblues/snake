@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     ui::init()?;
 
     let mut game = Game::new(SIZE);
-    ui::draw_map(&game.tiles())?;
+    ui::draw_map(&game.map)?;
     // ui::draw_score(game.steps());
 
     let mut crash = false;
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Err(game::Error::SnakeCrash) => crash = true,
                 _ => {}
             }
-            ui::draw_map(&game.tiles())?
+            ui::draw_map(&game.map)?
         }
 
         if poll(Duration::from_millis(100))? {
