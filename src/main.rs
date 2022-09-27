@@ -20,9 +20,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         if !crash {
-            match game::step(&mut map, &mut snake) {
-                Err(game::Error::SnakeCrash) => crash = true,
-                _ => {}
+            if let Err(game::Error::SnakeCrash) = game::step(&mut map, &mut snake) {
+                crash = true;
             }
             ui::draw_map(&map.tiles)?
         }

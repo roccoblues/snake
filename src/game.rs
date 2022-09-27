@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 use std::fmt;
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Tile {
     Free,
     Snake,
@@ -33,7 +33,7 @@ impl Direction {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Error {
     SnakeCrash,
 }
@@ -72,7 +72,7 @@ pub struct Snake {
 impl Snake {
     pub fn set_direction(&mut self, direction: Direction) {
         if self.direction.opposite() != direction {
-            return self.direction = direction;
+            self.direction = direction;
         }
     }
 }
