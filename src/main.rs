@@ -1,5 +1,5 @@
 use crossterm::event::{poll, read, Event, KeyCode};
-use game::{Direction, Map};
+use game::{Direction, Game};
 use std::error::Error;
 use std::time::Duration;
 
@@ -11,19 +11,13 @@ const SIZE: u16 = 25;
 fn main() -> Result<(), Box<dyn Error>> {
     ui::init()?;
 
-    let mut map = Map::new(SIZE);
-
-    let mut snake = map.spawn_snake();
-    let mut crash = false;
-
-    ui::draw_map(&map.tiles)?;
+    let mut game = Game::new(SIZE);
+    ui::draw_map(game.tiles())?;
 
     loop {
-        if !crash {
-            if let Err(game::Error::SnakeCrash) = game::step(&mut map, &mut snake) {
-                crash = true;
-            }
-            ui::draw_map(&map.tiles)?
+        if !game.end() {
+            game.step();
+            ui::draw_map(game.tiles())?
         }
 
         if poll(Duration::from_millis(150))? {
@@ -31,13 +25,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             if event == Event::Key(KeyCode::Esc.into()) {
                 break;
             } else if event == Event::Key(KeyCode::Up.into()) {
-                snake.set_direction(Direction::Up);
+                game.set_direction(Direction::Up);
             } else if event == Event::Key(KeyCode::Down.into()) {
-                snake.set_direction(Direction::Down);
+                game.set_direction(Direction::Down);
             } else if event == Event::Key(KeyCode::Left.into()) {
-                snake.set_direction(Direction::Left);
+                game.set_direction(Direction::Left);
             } else if event == Event::Key(KeyCode::Right.into()) {
-                snake.set_direction(Direction::Right);
+                game.set_direction(Direction::Right);
             };
         }
     }
