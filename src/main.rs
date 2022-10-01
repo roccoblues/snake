@@ -1,6 +1,5 @@
 use crossterm::event::{poll, read, Event, KeyCode};
 use game::{Direction, Game};
-use std::error::Error;
 use std::time::Duration;
 
 mod game;
@@ -8,19 +7,19 @@ mod ui;
 
 const SIZE: u16 = 25;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    ui::init()?;
+fn main() {
+    ui::init().unwrap();
 
     let mut game = Game::new(SIZE);
-    ui::draw_map(game.tiles())?;
+    ui::draw_map(game.tiles()).unwrap();
 
     loop {
         if !game.end() {
             game.step();
-            ui::draw_map(game.tiles())?
+            ui::draw_map(game.tiles()).unwrap();
         }
 
-        if poll(Duration::from_millis(150))? {
+        if poll(Duration::from_millis(150)).unwrap() {
             let event = read().unwrap();
             if event == Event::Key(KeyCode::Esc.into()) {
                 break;
@@ -36,6 +35,5 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    ui::reset()?;
-    Ok(())
+    ui::reset().unwrap();
 }
