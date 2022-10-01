@@ -14,11 +14,6 @@ fn main() {
     ui::draw_map(game.tiles()).unwrap();
 
     loop {
-        if !game.end() {
-            game.step();
-            ui::draw_map(game.tiles()).unwrap();
-        }
-
         if poll(Duration::from_millis(150)).unwrap() {
             let event = read().unwrap();
             if event == Event::Key(KeyCode::Esc.into()) {
@@ -32,6 +27,11 @@ fn main() {
             } else if event == Event::Key(KeyCode::Right.into()) {
                 game.set_direction(Direction::Right);
             };
+        }
+
+        if !game.end() {
+            game.step();
+            ui::draw_map(game.tiles()).unwrap();
         }
     }
 
