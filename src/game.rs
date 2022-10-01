@@ -46,26 +46,8 @@ impl fmt::Display for Error {
     }
 }
 
-#[derive(Debug)]
-pub struct Point {
-    x: u16,
-    y: u16,
-}
-
-impl Point {
-    fn next(&self, direction: Direction) -> Point {
-        let (x, y) = match direction {
-            Direction::Up => (self.x, self.y - 1),
-            Direction::Down => (self.x, self.y + 1),
-            Direction::Left => (self.x - 1, self.y),
-            Direction::Right => (self.x + 1, self.y),
-        };
-        Point { x, y }
-    }
-}
-
 pub struct Snake {
-    body: VecDeque<Point>,
+    body: VecDeque<(u16, u16)>,
     direction: Direction,
 }
 
@@ -81,7 +63,6 @@ type Tiles = Vec<Vec<Tile>>;
 
 pub struct Map {
     pub tiles: Tiles,
-    rng: ThreadRng,
 }
 
 impl Map {
@@ -98,86 +79,85 @@ impl Map {
             }
         }
 
-        let mut map = Map {
-            tiles,
-            rng: thread_rng(),
-        };
+        let mut map = Map { tiles };
 
         map.spawn_food();
         map.spawn_obstacles();
         map
     }
 
-    fn tile(&self, point: &Point) -> Tile {
-        self.tiles[point.x as usize][point.y as usize]
-    }
-
-    fn set_tile(&mut self, point: &Point, tile: Tile) {
-        self.tiles[point.x as usize][point.y as usize] = tile;
-    }
-
-    fn random_empty_point(&mut self, distance: u16) -> Point {
+    fn random_empty_point(&mut self, distance: u16) -> (u16, u16) {
         let size = self.tiles.len() as u16;
         loop {
             let x = self.rng.gen_range(distance + 1..size - distance);
             let y = self.rng.gen_range(distance + 1..size - distance);
-            let point = Point { x, y };
-            if self.tile(&point) == Tile::Free {
-                break point;
+            if self.tiles[x as usize][y as usize] == Tile::Free {
+                break (x, y);
             }
         }
     }
 
     fn spawn_food(&mut self) {
-        let point = self.random_empty_point(1);
-        self.set_tile(&point, Tile::Food);
+        let (x, y) = self.random_empty_point(1);
+        self.tiles[x as usize][y as usize] = Tile::Food;
     }
 
     fn spawn_obstacles(&mut self) {
         let size = self.tiles.len() as u16;
         for _ in 0..=size / 3 {
-            let point = self.random_empty_point(0);
-            self.set_tile(&point, Tile::Obstacle);
+            let (x, y) = self.random_empty_point(0);
+            self.tiles[x as usize][y as usize] = Tile::Obstacle;
         }
     }
 
     pub fn spawn_snake(&mut self) -> Snake {
-        let point = self.random_empty_point(3);
-        self.set_tile(&point, Tile::Snake);
+        let (x, y) = self.random_empty_point(3);
+        self.tiles[x as usize][y as usize] = Tile::Snake;
         let mut snake = Snake {
             body: VecDeque::new(),
             direction: random_direction(),
         };
-        snake.body.push_front(point);
+        snake.body.push_front((x, y));
         snake
     }
 }
 
 pub fn step(map: &mut Map, snake: &mut Snake) -> Result<(), Error> {
-    // tile in front of the snake
-    let next = snake.body.front().unwrap().next(snake.direction);
+    let (head_x, head_y) = *snake.body.front().unwrap();
 
-    match map.tile(&next) {
+    // tile in front of the snake
+    let (x, y) = next_point(head_x, head_y, snake.direction);
+
+    match map.tiles[x as usize][y as usize] {
         Tile::Obstacle | Tile::Snake => {
-            map.set_tile(&next, Tile::Crash);
+            map.tiles[x as usize][y as usize] = Tile::Crash;
             return Err(Error::SnakeCrash);
         }
         Tile::Food => map.spawn_food(),
         Tile::Free => {
             // remove last snake tile to "move" the snake
-            let tail = snake.body.pop_back().unwrap();
-            map.set_tile(&tail, Tile::Free);
+            let (tail_x, tail_y) = snake.body.pop_back().unwrap();
+            map.tiles[tail_x as usize][tail_y as usize] = Tile::Free;
         }
         Tile::Crash => unreachable!(),
     }
 
     // grow snake
-    map.set_tile(&next, Tile::Snake);
-    snake.body.push_front(next);
+    map.tiles[x as usize][y as usize] = Tile::Snake;
+    snake.body.push_front((x, y));
 
     Ok(())
 }
 
-pub fn random_direction() -> Direction {
+fn next_point(x: u16, y: u16, direction: Direction) -> (u16, u16) {
+    match direction {
+        Direction::Up => (x, y - 1),
+        Direction::Down => (x, y + 1),
+        Direction::Left => (x - 1, y),
+        Direction::Right => (x + 1, y),
+    }
+}
+
+fn random_direction() -> Direction {
     Direction::from_int(thread_rng().gen_range(0..=3) as u8).unwrap()
 }
