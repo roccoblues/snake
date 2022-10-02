@@ -1,3 +1,4 @@
+use clap::Parser;
 use crossterm::event::{poll, read, Event, KeyCode};
 use game::{Direction, Game};
 use std::time::Duration;
@@ -5,12 +6,24 @@ use std::time::Duration;
 mod game;
 mod ui;
 
-const SIZE: u16 = 25;
+/// Game of snake.
+#[derive(Parser)]
+struct Cli {
+    /// Width and height of the map
+    #[arg(short, long, default_value_t = 25)]
+    map_size: u16,
+
+    /// Autopilot mode
+    #[arg(short, long, default_value_t = false)]
+    autopilot: bool,
+}
 
 fn main() {
+    let args = Cli::parse();
+
     ui::init().unwrap();
 
-    let mut game = Game::new(SIZE);
+    let mut game = Game::new(args.map_size);
     ui::draw(&game.tiles, game.steps, game.snake.len() as u32).unwrap();
 
     loop {
