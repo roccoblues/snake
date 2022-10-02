@@ -1,7 +1,7 @@
 use crate::game::Tile;
 use crossterm::{
     cursor, execute, queue, style,
-    style::{Attribute, StyledContent, Stylize},
+    style::{Attribute, Print, StyledContent, Stylize},
     terminal::{
         disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
         LeaveAlternateScreen,
@@ -26,11 +26,13 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw_map(map: &Vec<Vec<Tile>>) -> crossterm::Result<()> {
+pub fn draw(map: &Vec<Vec<Tile>>, score: u32, snake_length: u32) -> crossterm::Result<()> {
     let (rows, cols) = size()?;
     let map_size = map.len() as u16;
     let x_adjust = (rows - map_size * 2) / 2;
     let y_adjust = (cols - map_size) / 2;
+
+    // drawp map
     for (x, v) in map.iter().enumerate() {
         for (y, tile) in v.iter().enumerate() {
             queue!(
@@ -40,6 +42,15 @@ pub fn draw_map(map: &Vec<Vec<Tile>>) -> crossterm::Result<()> {
             )?
         }
     }
+
+    queue!(
+        stdout(),
+        cursor::MoveTo(1, 0),
+        Print(format!("Score: {}", score)),
+        cursor::MoveTo(1, 1),
+        Print(format!("Snake length: {}", snake_length))
+    )?;
+
     stdout().flush()
 }
 

@@ -40,6 +40,7 @@ pub struct Game {
     snake: Snake,
     direction: Direction,
     end: bool,
+    steps: u32,
 }
 
 impl Game {
@@ -54,6 +55,7 @@ impl Game {
             snake,
             direction: random_direction(),
             end: false,
+            steps: 0,
         }
     }
 
@@ -80,6 +82,8 @@ impl Game {
         // grow snake
         self.tiles[x as usize][y as usize] = Tile::Snake;
         self.snake.push_front((x, y));
+
+        self.steps += 1;
     }
 
     pub fn set_direction(&mut self, direction: Direction) {
@@ -94,6 +98,14 @@ impl Game {
 
     pub fn end(&self) -> bool {
         self.end
+    }
+
+    pub fn snake_length(&self) -> u32 {
+        self.snake.len() as u32
+    }
+
+    pub fn score(&self) -> u32 {
+        self.steps
     }
 }
 
