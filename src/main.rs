@@ -11,7 +11,7 @@ fn main() {
     ui::init().unwrap();
 
     let mut game = Game::new(SIZE);
-    ui::draw(game.tiles(), game.score(), game.snake_length()).unwrap();
+    ui::draw(&game.tiles, game.steps, game.snake.len() as u32).unwrap();
 
     loop {
         if poll(Duration::from_millis(150)).unwrap() {
@@ -29,9 +29,9 @@ fn main() {
             };
         }
 
-        if !game.end() {
+        if !game.end {
             game.step();
-            ui::draw(game.tiles(), game.score(), game.snake_length()).unwrap();
+            ui::draw(&game.tiles, game.steps, game.snake.len() as u32).unwrap();
         }
     }
 

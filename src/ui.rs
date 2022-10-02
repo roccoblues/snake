@@ -54,7 +54,7 @@ pub fn draw(map: &Vec<Vec<Tile>>, score: u32, snake_length: u32) -> crossterm::R
     stdout().flush()
 }
 
-pub fn tile_to_symbol(x: u16, y: u16, size: u16, tile: &Tile) -> StyledContent<&str> {
+fn tile_to_symbol(x: u16, y: u16, size: u16, tile: &Tile) -> StyledContent<&str> {
     match tile {
         Tile::Free => "  ".attribute(Attribute::Reset),
         Tile::Snake => "██".green(),

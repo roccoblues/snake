@@ -36,11 +36,11 @@ type Tiles = Vec<Vec<Tile>>;
 type Snake = VecDeque<(u16, u16)>;
 
 pub struct Game {
-    tiles: Tiles,
-    snake: Snake,
+    pub tiles: Tiles,
+    pub snake: Snake,
     direction: Direction,
-    end: bool,
-    steps: u32,
+    pub end: bool,
+    pub steps: u32,
 }
 
 impl Game {
@@ -90,22 +90,6 @@ impl Game {
         if self.direction.opposite() != direction {
             self.direction = direction;
         }
-    }
-
-    pub fn tiles(&self) -> &Tiles {
-        &self.tiles
-    }
-
-    pub fn end(&self) -> bool {
-        self.end
-    }
-
-    pub fn snake_length(&self) -> u32 {
-        self.snake.len() as u32
-    }
-
-    pub fn score(&self) -> u32 {
-        self.steps
     }
 }
 
