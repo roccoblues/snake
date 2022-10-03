@@ -27,6 +27,7 @@ pub fn reset() -> crossterm::Result<()> {
 }
 
 pub fn draw(map: &Vec<Vec<Tile>>, score: u32, snake_length: u32) -> crossterm::Result<()> {
+    // adjust x+y to center map on screen
     let (rows, cols) = size()?;
     let map_size = map.len() as u16;
     let x_adjust = (rows - map_size * 2) / 2;
@@ -43,18 +44,25 @@ pub fn draw(map: &Vec<Vec<Tile>>, score: u32, snake_length: u32) -> crossterm::R
         }
     }
 
+    // draw score and snake length
+    let len_str = format!("Snake length: {}", snake_length);
     queue!(
         stdout(),
-        cursor::MoveTo(1, 0),
+        cursor::MoveTo(x_adjust, y_adjust - 1),
         Print(format!("Score: {}", score)),
-        cursor::MoveTo(1, 1),
-        Print(format!("Snake length: {}", snake_length))
+        cursor::MoveTo(
+            x_adjust + map_size * 2 - len_str.chars().count() as u16 - 1,
+            y_adjust - 1
+        ),
+        Print(len_str)
     )?;
 
     stdout().flush()
 }
 
 fn tile_to_symbol(x: u16, y: u16, size: u16, tile: &Tile) -> StyledContent<&str> {
+    // We use two characters to represent a tile. So we need to make sure to double
+    // the x value when we actually draw the tiles.
     match tile {
         Tile::Free => "  ".attribute(Attribute::Reset),
         Tile::Snake => "██".green(),

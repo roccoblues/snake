@@ -20,10 +20,9 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
+    let mut game = Game::new(args.map_size);
 
     ui::init().unwrap();
-
-    let mut game = Game::new(args.map_size);
     ui::draw(&game.tiles, game.steps, game.snake.len() as u32).unwrap();
 
     loop {

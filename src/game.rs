@@ -102,6 +102,7 @@ fn next_point(x: u16, y: u16, direction: Direction) -> (u16, u16) {
     }
 }
 
+// TODO: document distance parameter
 fn random_empty_point(tiles: &Tiles, distance: u16) -> (u16, u16) {
     let size = tiles.len() as u16;
     loop {
@@ -124,7 +125,7 @@ fn spawn_food(tiles: &mut Tiles) {
 
 fn spawn_obstacles(tiles: &mut Tiles) {
     let size = tiles.len() as u16;
-    for _ in 0..=size / 3 {
+    for _ in 0..=size / 2 {
         let (x, y) = random_empty_point(tiles, 0);
         tiles[x as usize][y as usize] = Tile::Obstacle;
     }
@@ -142,12 +143,9 @@ fn create_tiles(size: u16) -> Tiles {
     let mut tiles = vec![vec![Tile::Free; size.into()]; size.into()];
     for x in 0..=size - 1 {
         for y in 0..=size - 1 {
-            let tile = if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
-                Tile::Obstacle
-            } else {
-                Tile::Free
+            if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
+                tiles[x as usize][y as usize] = Tile::Obstacle;
             };
-            tiles[x as usize][y as usize] = tile;
         }
     }
     tiles
