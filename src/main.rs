@@ -28,17 +28,18 @@ fn main() {
     loop {
         if poll(Duration::from_millis(150)).unwrap() {
             let event = read().unwrap();
-            if event == Event::Key(KeyCode::Esc.into()) {
-                break;
-            } else if event == Event::Key(KeyCode::Up.into()) {
-                game.set_direction(Direction::Up);
-            } else if event == Event::Key(KeyCode::Down.into()) {
-                game.set_direction(Direction::Down);
-            } else if event == Event::Key(KeyCode::Left.into()) {
-                game.set_direction(Direction::Left);
-            } else if event == Event::Key(KeyCode::Right.into()) {
-                game.set_direction(Direction::Right);
-            };
+            match event {
+                Event::Key(key_event) => match key_event.code {
+                    KeyCode::Esc | KeyCode::Char('q') => break,
+                    KeyCode::Up => game.set_direction(Direction::Up),
+                    KeyCode::Down => game.set_direction(Direction::Down),
+                    KeyCode::Right => game.set_direction(Direction::Right),
+                    KeyCode::Left => game.set_direction(Direction::Left),
+                    KeyCode::Char(' ') => pause(),
+                    _ => {}
+                },
+                _ => {}
+            }
         }
 
         if !game.end {
@@ -48,4 +49,17 @@ fn main() {
     }
 
     ui::reset().unwrap();
+}
+
+fn pause() {
+    loop {
+        if poll(Duration::from_millis(100)).unwrap() {
+            let event = read().unwrap();
+            if event == Event::Key(KeyCode::Esc.into())
+                || event == Event::Key(KeyCode::Char(' ').into())
+            {
+                break;
+            }
+        }
+    }
 }
