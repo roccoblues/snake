@@ -1,4 +1,4 @@
-use crate::game::Tile;
+use crate::game::Cell;
 use crossterm::{
     cursor, execute, queue, style,
     style::{Attribute, Print, StyledContent, Stylize},
@@ -26,9 +26,9 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(map: &Vec<Vec<Tile>>, score: u32, snake_length: u32) -> crossterm::Result<()> {
-    // We use two characters to represent a tile. So we need to make sure to double
-    // the x value when we actually draw the tiles.
+pub fn draw(map: &Vec<Vec<Cell>>, steps: u32, snake_length: u32) -> crossterm::Result<()> {
+    // We use two characters to represent a cell. So we need to make sure to double
+    // the x value when we actually draw the cells.
 
     // adjust x+y to center map on screen
     let (rows, cols) = size()?;
@@ -38,21 +38,21 @@ pub fn draw(map: &Vec<Vec<Tile>>, score: u32, snake_length: u32) -> crossterm::R
 
     // drawp map
     for (x, v) in map.iter().enumerate() {
-        for (y, tile) in v.iter().enumerate() {
+        for (y, cell) in v.iter().enumerate() {
             queue!(
                 stdout(),
                 cursor::MoveTo(x as u16 * 2 + x_adjust, y as u16 + y_adjust),
-                style::PrintStyledContent(tile_to_symbol(x as u16, y as u16, map_size, tile))
+                style::PrintStyledContent(cell_to_symbol(x as u16, y as u16, map_size, cell))
             )?
         }
     }
 
-    // draw score and snake length
+    // draw steps and snake length
     let len_str = format!("Snake length: {}", snake_length);
     queue!(
         stdout(),
         cursor::MoveTo(x_adjust, y_adjust - 1),
-        Print(format!("Score: {}", score)),
+        Print(format!("Steps: {}", steps)),
         cursor::MoveTo(
             x_adjust + map_size * 2 - len_str.chars().count() as u16 - 1,
             y_adjust - 1
@@ -63,12 +63,12 @@ pub fn draw(map: &Vec<Vec<Tile>>, score: u32, snake_length: u32) -> crossterm::R
     stdout().flush()
 }
 
-fn tile_to_symbol(x: u16, y: u16, size: u16, tile: &Tile) -> StyledContent<&str> {
-    match tile {
-        Tile::Free => "  ".attribute(Attribute::Reset),
-        Tile::Snake => "██".green(),
-        Tile::Food => "██".yellow(),
-        Tile::Obstacle => {
+fn cell_to_symbol(x: u16, y: u16, size: u16, cell: &Cell) -> StyledContent<&str> {
+    match cell {
+        Cell::Free => "  ".attribute(Attribute::Reset),
+        Cell::Snake => "██".green(),
+        Cell::Food => "██".yellow(),
+        Cell::Obstacle => {
             if x == 0 {
                 // first column
                 if y == 0 {
@@ -94,6 +94,6 @@ fn tile_to_symbol(x: u16, y: u16, size: u16, tile: &Tile) -> StyledContent<&str>
                 "▓▓".white()
             }
         }
-        Tile::Crash => "××".red().on_white(),
+        Cell::Crash => "××".red().on_white(),
     }
 }
