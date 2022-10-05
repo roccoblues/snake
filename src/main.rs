@@ -9,9 +9,9 @@ mod ui;
 /// Game of snake.
 #[derive(Parser)]
 struct Cli {
-    /// Width and height of the map
+    /// Width and height of the grid
     #[arg(short, long, default_value_t = 25)]
-    map_size: u16,
+    grid_size: u16,
 
     /// Autopilot mode
     #[arg(short, long, default_value_t = false)]
@@ -20,10 +20,10 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
-    let mut game = Game::new(args.map_size);
+    let mut game = Game::new(args.grid_size);
 
     ui::init().unwrap();
-    ui::draw(&game.cells, game.steps, game.snake.len() as u32).unwrap();
+    ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
 
     loop {
         if poll(Duration::from_millis(150)).unwrap() {
@@ -44,7 +44,7 @@ fn main() {
 
         if !game.end {
             game.step();
-            ui::draw(&game.cells, game.steps, game.snake.len() as u32).unwrap();
+            ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
         }
     }
 

@@ -36,7 +36,7 @@ type Cells = Vec<Vec<Cell>>;
 type Snake = VecDeque<(u16, u16)>;
 
 pub struct Game {
-    pub cells: Cells,
+    pub grid: Cells,
     pub snake: Snake,
     direction: Direction,
     pub end: bool,
@@ -51,7 +51,7 @@ impl Game {
         let snake = spawn_snake(&mut cells);
 
         Game {
-            cells,
+            grid: cells,
             snake,
             direction: random_direction(),
             end: false,
@@ -64,23 +64,23 @@ impl Game {
 
         // cell in front of the snake
         let (x, y) = next_cell(head_x, head_y, self.direction);
-        match self.cells[x as usize][y as usize] {
+        match self.grid[x as usize][y as usize] {
             Cell::Obstacle | Cell::Snake => {
-                self.cells[x as usize][y as usize] = Cell::Crash;
+                self.grid[x as usize][y as usize] = Cell::Crash;
                 self.end = true;
                 return;
             }
-            Cell::Food => spawn_food(&mut self.cells),
+            Cell::Food => spawn_food(&mut self.grid),
             Cell::Free => {
                 // remove last snake cell to "move" the snake
                 let (tail_x, tail_y) = self.snake.pop_back().unwrap();
-                self.cells[tail_x as usize][tail_y as usize] = Cell::Free;
+                self.grid[tail_x as usize][tail_y as usize] = Cell::Free;
             }
             Cell::Crash => unreachable!(),
         }
 
         // grow snake
-        self.cells[x as usize][y as usize] = Cell::Snake;
+        self.grid[x as usize][y as usize] = Cell::Snake;
         self.snake.push_front((x, y));
 
         self.steps += 1;

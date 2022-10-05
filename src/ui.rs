@@ -26,23 +26,23 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(map: &Vec<Vec<Cell>>, steps: u32, snake_length: u32) -> crossterm::Result<()> {
+pub fn draw(grid: &Vec<Vec<Cell>>, steps: u32, snake_length: u32) -> crossterm::Result<()> {
     // We use two characters to represent a cell. So we need to make sure to double
     // the x value when we actually draw the cells.
 
-    // adjust x+y to center map on screen
+    // adjust x+y to center grid on screen
     let (rows, cols) = size()?;
-    let map_size = map.len() as u16;
-    let x_adjust = (rows - map_size * 2) / 2;
-    let y_adjust = (cols - map_size) / 2;
+    let size = grid.len() as u16;
+    let x_adjust = (rows - size * 2) / 2;
+    let y_adjust = (cols - size) / 2;
 
-    // drawp map
-    for (x, v) in map.iter().enumerate() {
+    // drawp grid
+    for (x, v) in grid.iter().enumerate() {
         for (y, cell) in v.iter().enumerate() {
             queue!(
                 stdout(),
                 cursor::MoveTo(x as u16 * 2 + x_adjust, y as u16 + y_adjust),
-                style::PrintStyledContent(cell_to_symbol(x as u16, y as u16, map_size, cell))
+                style::PrintStyledContent(cell_to_symbol(x as u16, y as u16, size, cell))
             )?
         }
     }
@@ -54,7 +54,7 @@ pub fn draw(map: &Vec<Vec<Cell>>, steps: u32, snake_length: u32) -> crossterm::R
         cursor::MoveTo(x_adjust, y_adjust - 1),
         Print(format!("Steps: {}", steps)),
         cursor::MoveTo(
-            x_adjust + map_size * 2 - len_str.chars().count() as u16 - 1,
+            x_adjust + size * 2 - len_str.chars().count() as u16 - 1,
             y_adjust - 1
         ),
         Print(len_str)
