@@ -40,18 +40,18 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(grid: &Grid, steps: u32, snake_length: usize) -> crossterm::Result<()> {
+pub fn draw(cells: &Vec<Vec<Cell>>, steps: u32, snake_length: usize) -> crossterm::Result<()> {
     // We use two characters to represent a cell. So we need to make sure to double
     // the x value when we actually draw the grid.
 
     // adjust x+y to center grid on screen
     let (rows, cols) = size()?;
-    let size = grid.len() as u16;
+    let size = cells.len() as u16;
     let x_adjust = (rows - size * 2) / 2;
     let y_adjust = (cols - size) / 2;
 
     // drawp grid
-    for (x, v) in grid.iter().enumerate() {
+    for (x, v) in cells.iter().enumerate() {
         for (y, cell) in v.iter().enumerate() {
             queue!(
                 stdout(),
