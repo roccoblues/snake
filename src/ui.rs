@@ -1,13 +1,27 @@
-use crate::game::Cell;
-use crossterm::{
-    cursor, execute, queue, style,
-    style::{Attribute, Print, StyledContent, Stylize},
-    terminal::{
-        disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
-        LeaveAlternateScreen,
-    },
+use crate::game::{Cell, Grid};
+use crossterm::event::{read, Event, KeyCode};
+use crossterm::style::{Attribute, Print, StyledContent, Stylize};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
+    LeaveAlternateScreen,
 };
+use crossterm::{cursor, execute, queue, style};
 use std::io::{stdout, Write};
+use std::time::Duration;
+
+const INPUT_TIMEOUT: Duration = Duration::from_millis(100);
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Input {
+    North,
+    South,
+    East,
+    West,
+    Pause,
+    Exit,
+    Unknown,
+}
 
 pub fn init() -> crossterm::Result<()> {
     enable_raw_mode()?;
@@ -26,9 +40,9 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(grid: &Vec<Vec<Cell>>, steps: u32, snake_length: u32) -> crossterm::Result<()> {
+pub fn draw(grid: &Grid, steps: u32, snake_length: u32) -> crossterm::Result<()> {
     // We use two characters to represent a cell. So we need to make sure to double
-    // the x value when we actually draw the cells.
+    // the x value when we actually draw the grid.
 
     // adjust x+y to center grid on screen
     let (rows, cols) = size()?;
@@ -95,5 +109,21 @@ fn cell_to_symbol(x: u16, y: u16, size: u16, cell: &Cell) -> StyledContent<&str>
             }
         }
         Cell::Crash => "××".red().on_white(),
+    }
+}
+
+pub fn read_input() -> Input {
+    let event = read().unwrap();
+    match event {
+        Event::Key(key_event) => match key_event.code {
+            KeyCode::Esc | KeyCode::Char('q') => Input::Exit,
+            KeyCode::Up => Input::North,
+            KeyCode::Down => Input::South,
+            KeyCode::Right => Input::East,
+            KeyCode::Left => Input::West,
+            KeyCode::Char(' ') => Input::Pause,
+            _ => Input::Unknown,
+        },
+        _ => Input::Unknown,
     }
 }

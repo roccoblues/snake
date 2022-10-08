@@ -1,10 +1,16 @@
 use clap::Parser;
-use crossterm::event::{poll, read, Event, KeyCode};
+use crossbeam_channel::{select, tick, unbounded};
 use game::{Direction, Game};
+use std::thread;
 use std::time::Duration;
+use ui::Input;
 
 mod game;
+mod path;
 mod ui;
+
+// advance snake and redraw every 150ms
+const SPEED: Duration = Duration::from_millis(150);
 
 /// Game of snake.
 #[derive(Parser)]
@@ -22,44 +28,40 @@ fn main() {
     let args = Cli::parse();
     let mut game = Game::new(args.grid_size);
 
+    let mut pause = false;
+    let ticks = tick(SPEED);
+
     ui::init().unwrap();
     ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
 
-    loop {
-        if poll(Duration::from_millis(150)).unwrap() {
-            let event = read().unwrap();
-            match event {
-                Event::Key(key_event) => match key_event.code {
-                    KeyCode::Esc | KeyCode::Char('q') => break,
-                    KeyCode::Up => game.set_direction(Direction::Up),
-                    KeyCode::Down => game.set_direction(Direction::Down),
-                    KeyCode::Right => game.set_direction(Direction::Right),
-                    KeyCode::Left => game.set_direction(Direction::Left),
-                    KeyCode::Char(' ') => pause(),
-                    _ => {}
-                },
-                _ => {}
-            }
-        }
+    // spawn thread to handle ui input
+    let (s, ui_input) = unbounded();
+    thread::spawn(move || loop {
+        s.send(ui::read_input()).unwrap();
+    });
 
-        if !game.end {
-            game.step();
-            ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
+    // game loop
+    loop {
+        select! {
+            recv(ticks) -> _ => {
+                if !game.end && !pause{
+                    game.step();
+                     ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
+                }
+            }
+            recv(ui_input) -> msg => {
+                match msg.unwrap() {
+                    Input::Exit => break,
+                    Input::North => game.set_direction(Direction::North),
+                    Input::South => game.set_direction(Direction::South),
+                    Input::East => game.set_direction(Direction::East),
+                    Input::West => game.set_direction(Direction::West),
+                    Input::Pause => pause ^= true,
+                    Input::Unknown => {},
+                }
+            }
         }
     }
 
     ui::reset().unwrap();
-}
-
-fn pause() {
-    loop {
-        if poll(Duration::from_millis(100)).unwrap() {
-            let event = read().unwrap();
-            if event == Event::Key(KeyCode::Esc.into())
-                || event == Event::Key(KeyCode::Char(' ').into())
-            {
-                break;
-            }
-        }
-    }
 }

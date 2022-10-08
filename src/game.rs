@@ -15,28 +15,28 @@ pub enum Cell {
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, IntEnum)]
 pub enum Direction {
-    Up = 0,
-    Down = 1,
-    Left = 2,
-    Right = 3,
+    North = 0,
+    South = 1,
+    West = 2,
+    East = 3,
 }
 
 impl Direction {
     fn opposite(&self) -> Direction {
         match self {
-            Direction::Up => Direction::Down,
-            Direction::Down => Direction::Up,
-            Direction::Left => Direction::Right,
-            Direction::Right => Direction::Left,
+            Direction::North => Direction::South,
+            Direction::South => Direction::North,
+            Direction::West => Direction::East,
+            Direction::East => Direction::West,
         }
     }
 }
 
-type Cells = Vec<Vec<Cell>>;
+pub type Grid = Vec<Vec<Cell>>;
 type Snake = VecDeque<(u16, u16)>;
 
 pub struct Game {
-    pub grid: Cells,
+    pub grid: Grid,
     pub snake: Snake,
     direction: Direction,
     pub end: bool,
@@ -45,13 +45,13 @@ pub struct Game {
 
 impl Game {
     pub fn new(size: u16) -> Game {
-        let mut cells = create_cells(size);
-        spawn_food(&mut cells);
-        spawn_obstacles(&mut cells);
-        let snake = spawn_snake(&mut cells);
+        let mut grid = create_grid(size);
+        spawn_food(&mut grid);
+        spawn_obstacles(&mut grid);
+        let snake = spawn_snake(&mut grid);
 
         Game {
-            grid: cells,
+            grid,
             snake,
             direction: random_direction(),
             end: false,
@@ -91,24 +91,28 @@ impl Game {
             self.direction = direction;
         }
     }
+
+    pub fn direction(&self) -> Direction {
+        self.direction
+    }
 }
 
 fn next_cell(x: u16, y: u16, direction: Direction) -> (u16, u16) {
     match direction {
-        Direction::Up => (x, y - 1),
-        Direction::Down => (x, y + 1),
-        Direction::Left => (x - 1, y),
-        Direction::Right => (x + 1, y),
+        Direction::North => (x, y - 1),
+        Direction::South => (x, y + 1),
+        Direction::West => (x - 1, y),
+        Direction::East => (x + 1, y),
     }
 }
 
 // TODO: document distance parameter
-fn random_empty_cell(cells: &Cells, distance: u16) -> (u16, u16) {
-    let size = cells.len() as u16;
+fn random_empty_cell(grid: &Grid, distance: u16) -> (u16, u16) {
+    let size = grid.len() as u16;
     loop {
         let x = thread_rng().gen_range(distance + 1..size - distance);
         let y = thread_rng().gen_range(distance + 1..size - distance);
-        if cells[x as usize][y as usize] == Cell::Free {
+        if grid[x as usize][y as usize] == Cell::Free {
             break (x, y);
         }
     }
@@ -118,35 +122,35 @@ fn random_direction() -> Direction {
     Direction::from_int(thread_rng().gen_range(0..=3) as u8).unwrap()
 }
 
-fn spawn_food(cells: &mut Cells) {
-    let (x, y) = random_empty_cell(cells, 1);
-    cells[x as usize][y as usize] = Cell::Food;
+fn spawn_food(grid: &mut Grid) {
+    let (x, y) = random_empty_cell(grid, 1);
+    grid[x as usize][y as usize] = Cell::Food;
 }
 
-fn spawn_obstacles(cells: &mut Cells) {
-    let size = cells.len() as u16;
+fn spawn_obstacles(grid: &mut Grid) {
+    let size = grid.len() as u16;
     for _ in 0..=size / 2 {
-        let (x, y) = random_empty_cell(cells, 0);
-        cells[x as usize][y as usize] = Cell::Obstacle;
+        let (x, y) = random_empty_cell(grid, 0);
+        grid[x as usize][y as usize] = Cell::Obstacle;
     }
 }
 
-fn spawn_snake(cells: &mut Cells) -> Snake {
-    let (x, y) = random_empty_cell(cells, 3);
-    cells[x as usize][y as usize] = Cell::Snake;
+fn spawn_snake(grid: &mut Grid) -> Snake {
+    let (x, y) = random_empty_cell(grid, 3);
+    grid[x as usize][y as usize] = Cell::Snake;
     let mut snake = VecDeque::new();
     snake.push_front((x, y));
     snake
 }
 
-fn create_cells(size: u16) -> Cells {
-    let mut cells = vec![vec![Cell::Free; size.into()]; size.into()];
+fn create_grid(size: u16) -> Grid {
+    let mut grid = vec![vec![Cell::Free; size.into()]; size.into()];
     for x in 0..=size - 1 {
         for y in 0..=size - 1 {
             if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
-                cells[x as usize][y as usize] = Cell::Obstacle;
+                grid[x as usize][y as usize] = Cell::Obstacle;
             };
         }
     }
-    cells
+    grid
 }
