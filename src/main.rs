@@ -1,6 +1,6 @@
 use clap::Parser;
 use crossbeam_channel::{select, tick, unbounded};
-use game::{Direction, Game};
+use game::Direction;
 use std::thread;
 use std::time::Duration;
 use ui::Input;
@@ -26,15 +26,21 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
-    let mut game = Game::new(args.grid_size);
 
+    let mut end = false;
     let mut paused = false;
+    let mut steps = 0;
+    let mut grid = game::create_grid(args.grid_size);
+    let mut snake = game::spawn_snake(&mut grid);
+    let obstacle_count = grid.len() / 2;
+    game::spawn_obstacles(&mut grid, obstacle_count);
+    game::spawn_food(&mut grid);
     let mut direction = game::random_direction();
 
     let ticks = tick(SPEED);
 
     ui::init().unwrap();
-    ui::draw(&game.grid.cells, game.steps, game.snake.len()).unwrap();
+    ui::draw(&grid, steps, snake.len()).unwrap();
 
     // spawn thread to handle ui input
     let (s, ui_input) = unbounded();
@@ -46,9 +52,10 @@ fn main() {
     loop {
         select! {
             recv(ticks) -> _ => {
-                if !game.end && !paused{
-                    game.step(direction);
-                     ui::draw(&game.grid.cells, game.steps, game.snake.len()).unwrap();
+                if !end && !paused{
+                    end = !game::step(&mut grid, &mut snake, direction);
+                    steps +=1;
+                    ui::draw(&grid, steps, snake.len()).unwrap();
                 }
             }
             recv(ui_input) -> msg => {
