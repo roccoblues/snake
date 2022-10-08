@@ -33,7 +33,50 @@ impl Direction {
 }
 
 pub type Grid = Vec<Vec<Cell>>;
-type Snake = VecDeque<(usize, usize)>;
+
+pub struct Snake {
+    body: VecDeque<(usize, usize)>,
+}
+
+impl Snake {
+    fn advance(&mut self, new_direction: Direction) {
+        // only use new direction if it is doesn't change by 180 degrees
+        let mut direction = self.direction();
+        if new_direction != direction.opposite() {
+            direction = new_direction;
+        }
+
+        let (x, y) = self.head();
+        let (next_x, next_y) = next_cell(x, y, direction);
+        self.body.push_front((next_x, next_y));
+    }
+
+    fn direction(&self) -> Direction {
+        let (head_x, head_y) = self.head();
+        let (next_x, next_y) = *self.body.get(1).unwrap();
+        if head_x > next_x {
+            Direction::East
+        } else if head_x < next_x {
+            Direction::West
+        } else if head_y > next_y {
+            Direction::South
+        } else {
+            Direction::North
+        }
+    }
+
+    fn head(&self) -> (usize, usize) {
+        *self.body.front().unwrap()
+    }
+
+    pub fn len(&self) -> usize {
+        self.body.len()
+    }
+
+    pub fn remove_tail(&mut self) -> (usize, usize) {
+        self.body.pop_back().unwrap()
+    }
+}
 
 pub struct Game {
     pub grid: Grid,
@@ -60,27 +103,25 @@ impl Game {
     }
 
     pub fn step(&mut self, direction: Direction) {
-        // cell in front of the snake in the given direction
-        let (x, y) = snake_next_cell(&self.snake, direction);
+        self.snake.advance(direction);
 
+        let (x, y) = self.snake.head();
         match self.grid[x][y] {
             Cell::Obstacle | Cell::Snake => {
                 self.grid[x][y] = Cell::Crash;
                 self.end = true;
-                return;
             }
-            Cell::Food => spawn_food(&mut self.grid),
+            Cell::Food => {
+                self.grid[x][y] = Cell::Snake;
+                spawn_food(&mut self.grid)
+            }
             Cell::Free => {
-                // remove last snake cell to "move" the snake
-                let (tail_x, tail_y) = self.snake.pop_back().unwrap();
+                self.grid[x][y] = Cell::Snake;
+                let (tail_x, tail_y) = self.snake.remove_tail();
                 self.grid[tail_x][tail_y] = Cell::Free;
             }
             Cell::Crash => unreachable!(),
         }
-
-        // grow snake
-        self.grid[x][y] = Cell::Snake;
-        self.snake.push_front((x, y));
 
         self.steps += 1;
     }
@@ -97,17 +138,6 @@ fn next_cell(x: usize, y: usize, direction: Direction) -> (usize, usize) {
         Direction::West => (x - 1, y),
         Direction::East => (x + 1, y),
     }
-}
-
-fn snake_next_cell(snake: &Snake, new_direction: Direction) -> (usize, usize) {
-    // only use new direction if it is doesn't change by 180 degrees
-    let mut direction = snake_direction(snake);
-    if new_direction != direction.opposite() {
-        direction = new_direction;
-    }
-
-    let (x, y) = *snake.front().unwrap();
-    next_cell(x, y, direction)
 }
 
 // TODO: document distance parameter
@@ -139,10 +169,12 @@ fn spawn_snake(grid: &mut Grid) -> Snake {
     let (x, y) = random_empty_cell(grid, 4);
     grid[x][y] = Cell::Snake;
     grid[x + 1][y] = Cell::Snake;
-    let mut snake = VecDeque::new();
-    snake.push_front((x, y));
-    snake.push_front((x + 1, y));
-    snake
+
+    let mut body = VecDeque::with_capacity(2);
+    body.push_front((x, y));
+    body.push_front((x + 1, y));
+
+    Snake { body }
 }
 
 fn create_grid(size: usize) -> Grid {
@@ -155,18 +187,4 @@ fn create_grid(size: usize) -> Grid {
         }
     }
     grid
-}
-
-fn snake_direction(snake: &Snake) -> Direction {
-    let (head_x, head_y) = snake.front().unwrap();
-    let (next_x, next_y) = snake.get(1).unwrap();
-    if head_x > next_x {
-        Direction::East
-    } else if head_x < next_x {
-        Direction::West
-    } else if head_y > next_y {
-        Direction::South
-    } else {
-        Direction::North
-    }
 }

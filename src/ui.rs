@@ -40,7 +40,7 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(grid: &Grid, steps: u32, snake_length: u32) -> crossterm::Result<()> {
+pub fn draw(grid: &Grid, steps: u32, snake_length: usize) -> crossterm::Result<()> {
     // We use two characters to represent a cell. So we need to make sure to double
     // the x value when we actually draw the grid.
 

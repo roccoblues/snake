@@ -34,7 +34,7 @@ fn main() {
     let ticks = tick(SPEED);
 
     ui::init().unwrap();
-    ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
+    ui::draw(&game.grid, game.steps, game.snake.len()).unwrap();
 
     // spawn thread to handle ui input
     let (s, ui_input) = unbounded();
@@ -48,7 +48,7 @@ fn main() {
             recv(ticks) -> _ => {
                 if !game.end && !paused{
                     game.step(direction);
-                     ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
+                     ui::draw(&game.grid, game.steps, game.snake.len()).unwrap();
                 }
             }
             recv(ui_input) -> msg => {
