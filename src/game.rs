@@ -45,6 +45,8 @@ pub struct Game {
 
 impl Game {
     pub fn new(size: usize) -> Game {
+        assert!(size >= 5, "Minimum grid size is 5!");
+
         let mut grid = create_grid(size);
         spawn_food(&mut grid);
         spawn_obstacles(&mut grid);
