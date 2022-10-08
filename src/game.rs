@@ -38,7 +38,6 @@ type Snake = VecDeque<(usize, usize)>;
 pub struct Game {
     pub grid: Grid,
     pub snake: Snake,
-    direction: Direction,
     pub end: bool,
     pub steps: u32,
 }
@@ -48,26 +47,21 @@ impl Game {
         assert!(size >= 5, "Minimum grid size is 5!");
 
         let mut grid = create_grid(size);
+        let snake = spawn_snake(&mut grid);
         spawn_food(&mut grid);
         spawn_obstacles(&mut grid);
-        let snake = spawn_snake(&mut grid);
 
         Game {
             grid,
             snake,
-            direction: random_direction(),
             end: false,
             steps: 0,
         }
     }
 
     pub fn step(&mut self, direction: Direction) {
-        self.set_direction(direction);
-
-        let (head_x, head_y) = *self.snake.front().unwrap();
-
-        // cell in front of the snake
-        let (x, y) = next_cell(head_x, head_y, self.direction);
+        // cell in front of the snake in the given direction
+        let (x, y) = snake_next_cell(&self.snake, direction);
 
         match self.grid[x][y] {
             Cell::Obstacle | Cell::Snake => {
@@ -90,12 +84,6 @@ impl Game {
 
         self.steps += 1;
     }
-
-    fn set_direction(&mut self, direction: Direction) {
-        if self.direction.opposite() != direction {
-            self.direction = direction;
-        }
-    }
 }
 
 pub fn random_direction() -> Direction {
@@ -109,6 +97,17 @@ fn next_cell(x: usize, y: usize, direction: Direction) -> (usize, usize) {
         Direction::West => (x - 1, y),
         Direction::East => (x + 1, y),
     }
+}
+
+fn snake_next_cell(snake: &Snake, new_direction: Direction) -> (usize, usize) {
+    // only use new direction if it is doesn't change by 180 degrees
+    let mut direction = snake_direction(snake);
+    if new_direction != direction.opposite() {
+        direction = new_direction;
+    }
+
+    let (x, y) = *snake.front().unwrap();
+    next_cell(x, y, direction)
 }
 
 // TODO: document distance parameter
@@ -137,10 +136,12 @@ fn spawn_obstacles(grid: &mut Grid) {
 }
 
 fn spawn_snake(grid: &mut Grid) -> Snake {
-    let (x, y) = random_empty_cell(grid, 3);
+    let (x, y) = random_empty_cell(grid, 4);
     grid[x][y] = Cell::Snake;
+    grid[x + 1][y] = Cell::Snake;
     let mut snake = VecDeque::new();
     snake.push_front((x, y));
+    snake.push_front((x + 1, y));
     snake
 }
 
@@ -154,4 +155,18 @@ fn create_grid(size: usize) -> Grid {
         }
     }
     grid
+}
+
+fn snake_direction(snake: &Snake) -> Direction {
+    let (head_x, head_y) = snake.front().unwrap();
+    let (next_x, next_y) = snake.get(1).unwrap();
+    if head_x > next_x {
+        Direction::East
+    } else if head_x < next_x {
+        Direction::West
+    } else if head_y > next_y {
+        Direction::South
+    } else {
+        Direction::North
+    }
 }

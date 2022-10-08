@@ -9,7 +9,7 @@ mod game;
 mod path;
 mod ui;
 
-// advance snake and redraw every 150ms
+// snake advance and ui redraw interval
 const SPEED: Duration = Duration::from_millis(150);
 
 /// Game of snake.
