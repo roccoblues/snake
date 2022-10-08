@@ -17,7 +17,7 @@ const SPEED: Duration = Duration::from_millis(150);
 struct Cli {
     /// Width and height of the grid
     #[arg(short, long, default_value_t = 25)]
-    grid_size: u16,
+    grid_size: usize,
 
     /// Autopilot mode
     #[arg(short, long, default_value_t = false)]

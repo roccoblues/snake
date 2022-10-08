@@ -33,7 +33,7 @@ impl Direction {
 }
 
 pub type Grid = Vec<Vec<Cell>>;
-type Snake = VecDeque<(u16, u16)>;
+type Snake = VecDeque<(usize, usize)>;
 
 pub struct Game {
     pub grid: Grid,
@@ -44,7 +44,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(size: u16) -> Game {
+    pub fn new(size: usize) -> Game {
         let mut grid = create_grid(size);
         spawn_food(&mut grid);
         spawn_obstacles(&mut grid);
@@ -97,7 +97,7 @@ impl Game {
     }
 }
 
-fn next_cell(x: u16, y: u16, direction: Direction) -> (u16, u16) {
+fn next_cell(x: usize, y: usize, direction: Direction) -> (usize, usize) {
     match direction {
         Direction::North => (x, y - 1),
         Direction::South => (x, y + 1),
@@ -107,12 +107,12 @@ fn next_cell(x: u16, y: u16, direction: Direction) -> (u16, u16) {
 }
 
 // TODO: document distance parameter
-fn random_empty_cell(grid: &Grid, distance: u16) -> (u16, u16) {
-    let size = grid.len() as u16;
+fn random_empty_cell(grid: &Grid, distance: usize) -> (usize, usize) {
+    let size = grid.len();
     loop {
         let x = thread_rng().gen_range(distance + 1..size - distance);
         let y = thread_rng().gen_range(distance + 1..size - distance);
-        if grid[x as usize][y as usize] == Cell::Free {
+        if grid[x][y] == Cell::Free {
             break (x, y);
         }
     }
@@ -128,7 +128,7 @@ fn spawn_food(grid: &mut Grid) {
 }
 
 fn spawn_obstacles(grid: &mut Grid) {
-    let size = grid.len() as u16;
+    let size = grid.len();
     for _ in 0..=size / 2 {
         let (x, y) = random_empty_cell(grid, 0);
         grid[x as usize][y as usize] = Cell::Obstacle;
@@ -137,18 +137,18 @@ fn spawn_obstacles(grid: &mut Grid) {
 
 fn spawn_snake(grid: &mut Grid) -> Snake {
     let (x, y) = random_empty_cell(grid, 3);
-    grid[x as usize][y as usize] = Cell::Snake;
+    grid[x][y] = Cell::Snake;
     let mut snake = VecDeque::new();
     snake.push_front((x, y));
     snake
 }
 
-fn create_grid(size: u16) -> Grid {
-    let mut grid = vec![vec![Cell::Free; size.into()]; size.into()];
+fn create_grid(size: usize) -> Grid {
+    let mut grid = vec![vec![Cell::Free; size]; size];
     for x in 0..=size - 1 {
         for y in 0..=size - 1 {
             if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
-                grid[x as usize][y as usize] = Cell::Obstacle;
+                grid[x][y] = Cell::Obstacle;
             };
         }
     }

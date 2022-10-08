@@ -56,7 +56,7 @@ pub fn draw(grid: &Grid, steps: u32, snake_length: u32) -> crossterm::Result<()>
             queue!(
                 stdout(),
                 cursor::MoveTo(x as u16 * 2 + x_adjust, y as u16 + y_adjust),
-                style::PrintStyledContent(cell_to_symbol(x as u16, y as u16, size, cell))
+                style::PrintStyledContent(cell_to_symbol(x, y, size as usize, cell))
             )?
         }
     }
@@ -77,7 +77,7 @@ pub fn draw(grid: &Grid, steps: u32, snake_length: u32) -> crossterm::Result<()>
     stdout().flush()
 }
 
-fn cell_to_symbol(x: u16, y: u16, size: u16, cell: &Cell) -> StyledContent<&str> {
+fn cell_to_symbol(x: usize, y: usize, size: usize, cell: &Cell) -> StyledContent<&str> {
     match cell {
         Cell::Free => "  ".attribute(Attribute::Reset),
         Cell::Snake => "██".green(),
