@@ -61,14 +61,17 @@ impl Game {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self, direction: Direction) {
+        self.set_direction(direction);
+
         let (head_x, head_y) = *self.snake.front().unwrap();
 
         // cell in front of the snake
         let (x, y) = next_cell(head_x, head_y, self.direction);
-        match self.grid[x as usize][y as usize] {
+
+        match self.grid[x][y] {
             Cell::Obstacle | Cell::Snake => {
-                self.grid[x as usize][y as usize] = Cell::Crash;
+                self.grid[x][y] = Cell::Crash;
                 self.end = true;
                 return;
             }
@@ -76,27 +79,27 @@ impl Game {
             Cell::Free => {
                 // remove last snake cell to "move" the snake
                 let (tail_x, tail_y) = self.snake.pop_back().unwrap();
-                self.grid[tail_x as usize][tail_y as usize] = Cell::Free;
+                self.grid[tail_x][tail_y] = Cell::Free;
             }
             Cell::Crash => unreachable!(),
         }
 
         // grow snake
-        self.grid[x as usize][y as usize] = Cell::Snake;
+        self.grid[x][y] = Cell::Snake;
         self.snake.push_front((x, y));
 
         self.steps += 1;
     }
 
-    pub fn set_direction(&mut self, direction: Direction) {
+    fn set_direction(&mut self, direction: Direction) {
         if self.direction.opposite() != direction {
             self.direction = direction;
         }
     }
+}
 
-    pub fn direction(&self) -> Direction {
-        self.direction
-    }
+pub fn random_direction() -> Direction {
+    Direction::from_int(thread_rng().gen_range(0..=3) as u8).unwrap()
 }
 
 fn next_cell(x: usize, y: usize, direction: Direction) -> (usize, usize) {
@@ -120,20 +123,16 @@ fn random_empty_cell(grid: &Grid, distance: usize) -> (usize, usize) {
     }
 }
 
-fn random_direction() -> Direction {
-    Direction::from_int(thread_rng().gen_range(0..=3) as u8).unwrap()
-}
-
 fn spawn_food(grid: &mut Grid) {
     let (x, y) = random_empty_cell(grid, 1);
-    grid[x as usize][y as usize] = Cell::Food;
+    grid[x][y] = Cell::Food;
 }
 
 fn spawn_obstacles(grid: &mut Grid) {
     let size = grid.len();
     for _ in 0..=size / 2 {
         let (x, y) = random_empty_cell(grid, 0);
-        grid[x as usize][y as usize] = Cell::Obstacle;
+        grid[x][y] = Cell::Obstacle;
     }
 }
 

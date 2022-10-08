@@ -29,6 +29,8 @@ fn main() {
     let mut game = Game::new(args.grid_size);
 
     let mut paused = false;
+    let mut direction = game::random_direction();
+
     let ticks = tick(SPEED);
 
     ui::init().unwrap();
@@ -45,17 +47,17 @@ fn main() {
         select! {
             recv(ticks) -> _ => {
                 if !game.end && !paused{
-                    game.step();
+                    game.step(direction);
                      ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
                 }
             }
             recv(ui_input) -> msg => {
                 match msg.unwrap() {
                     Input::Exit => break,
-                    Input::North => game.set_direction(Direction::North),
-                    Input::South => game.set_direction(Direction::South),
-                    Input::East => game.set_direction(Direction::East),
-                    Input::West => game.set_direction(Direction::West),
+                    Input::North => direction= Direction::North,
+                    Input::South => direction = Direction::South,
+                    Input::East => direction = Direction::East,
+                    Input::West => direction = Direction::West,
                     Input::Pause => paused ^= true,
                     Input::Unknown => {},
                 }
