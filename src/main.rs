@@ -28,7 +28,7 @@ fn main() {
     let args = Cli::parse();
     let mut game = Game::new(args.grid_size);
 
-    let mut pause = false;
+    let mut paused = false;
     let ticks = tick(SPEED);
 
     ui::init().unwrap();
@@ -44,7 +44,7 @@ fn main() {
     loop {
         select! {
             recv(ticks) -> _ => {
-                if !game.end && !pause{
+                if !game.end && !paused{
                     game.step();
                      ui::draw(&game.grid, game.steps, game.snake.len() as u32).unwrap();
                 }
@@ -56,7 +56,7 @@ fn main() {
                     Input::South => game.set_direction(Direction::South),
                     Input::East => game.set_direction(Direction::East),
                     Input::West => game.set_direction(Direction::West),
-                    Input::Pause => pause ^= true,
+                    Input::Pause => paused ^= true,
                     Input::Unknown => {},
                 }
             }
