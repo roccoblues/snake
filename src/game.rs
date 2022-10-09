@@ -1,6 +1,16 @@
 use int_enum::IntEnum;
 use rand::prelude::*;
 use std::collections::VecDeque;
+use std::fmt;
+
+#[derive(Debug)]
+pub struct SnakeCrash;
+
+impl fmt::Display for SnakeCrash {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Snake crashed!")
+    }
+}
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -113,14 +123,14 @@ pub fn spawn_obstacles(grid: &mut Grid, count: usize) {
     }
 }
 
-pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> bool {
+pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<(), SnakeCrash> {
     advance_snake(snake, direction);
 
     let (x, y) = *snake.front().unwrap();
     match grid[x][y] {
         Cell::Obstacle | Cell::Snake => {
             grid[x][y] = Cell::Crash;
-            return false;
+            return Err(SnakeCrash);
         }
         Cell::Food => {
             grid[x][y] = Cell::Snake;
@@ -133,7 +143,7 @@ pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> bool {
         }
         Cell::Crash => unreachable!(),
     }
-    true
+    Ok(())
 }
 
 pub fn random_direction() -> Direction {

@@ -53,7 +53,9 @@ fn main() {
         select! {
             recv(ticks) -> _ => {
                 if !end && !paused{
-                    end = !game::step(&mut grid, &mut snake, direction);
+                    if game::step(&mut grid, &mut snake, direction).is_err() {
+                        end = true
+                    }
                     steps +=1;
                     ui::draw(&grid, steps, snake.len()).unwrap();
                 }
