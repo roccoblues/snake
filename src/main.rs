@@ -48,11 +48,22 @@ fn main() {
         s.send(ui::read_input()).unwrap();
     });
 
+    let mut path: Vec<Direction> = Vec::new();
+
     // game loop
     loop {
         select! {
             recv(ticks) -> _ => {
                 if !end && !paused{
+                    if args.autopilot {
+                        // calculate the path to the food as a list of directions
+                        if path.is_empty() {
+                            path = path::solve(&grid, snake.front().unwrap(), direction);
+                        }
+                        direction = path.pop().unwrap();
+                    }
+
+                    // advance the snake one cell
                     if game::step(&mut grid, &mut snake, direction).is_err() {
                         end = true
                     }
@@ -63,7 +74,7 @@ fn main() {
             recv(ui_input) -> msg => {
                 match msg.unwrap() {
                     Input::Exit => break,
-                    Input::North => direction= Direction::North,
+                    Input::North => direction = Direction::North,
                     Input::South => direction = Direction::South,
                     Input::East => direction = Direction::East,
                     Input::West => direction = Direction::West,
