@@ -9,12 +9,6 @@ struct CellInfo {
     parent_x: isize,
     parent_y: isize,
     g: usize,
-}
-
-#[derive(Default, Clone, Debug)]
-struct OpenListEntry {
-    x: usize,
-    y: usize,
     f: usize,
 }
 
@@ -27,6 +21,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     let mut cell_details: Vec<Vec<CellInfo>> = vec![
         vec![
             CellInfo {
+                f: usize::MAX,
                 ..Default::default()
             };
             grid.len()
@@ -43,60 +38,56 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     }
 
     // Create an open list.
-    let mut open_list: Vec<OpenListEntry> = Vec::with_capacity(grid.len() * grid.len());
+    let mut open_list: Vec<(usize, usize)> = Vec::with_capacity(grid.len() * grid.len());
 
     // Create a closed list and initialise it to false which means that no cell
     // has been included yet. This closed list is implemented as a boolean 2D array.
     let mut closed_list = vec![vec![false; grid.len()]; grid.len()];
 
     // put the starting node on the open list
-    open_list.push(OpenListEntry {
-        x: start_x,
-        y: start_y,
-        f: 0,
-    });
+    open_list.push((start_x, start_y));
 
     while !open_list.is_empty() {
         debug!("open_list.len(): {}", open_list.len());
 
-        // pop the node with the least f on the open list
-        let i = lowest_f(&open_list);
-        let q = open_list.swap_remove(i);
+        // pop the node with the lowest f on the open list
+        let i = lowest_f(&open_list, &cell_details);
+        let (x, y) = open_list.swap_remove(i);
 
         // push it on the closed list
-        closed_list[q.x][q.y] = true;
+        closed_list[x][y] = true;
 
-        let successors = generate_successors(q.x, q.y, grid);
-        for (x, y) in successors.into_iter() {
+        let successors = generate_successors(x, y, grid);
+        for (next_x, next_y) in successors.into_iter() {
             // if successor is the target, stop search
-            if x == target_x && y == target_y {
-                cell_details[x][y].parent_x = q.x as isize;
-                cell_details[x][y].parent_y = q.y as isize;
-                closed_list[x][y] = true;
-                return generate_path(x, y, &cell_details);
+            if next_x == target_x && next_y == target_y {
+                cell_details[next_x][next_y].parent_x = x as isize;
+                cell_details[next_x][next_y].parent_y = y as isize;
+                return generate_path(next_x, next_y, &cell_details);
             }
 
             // if the successor is already on the closed list we ignore it
-            if closed_list[x][y] {
+            if closed_list[next_x][next_y] {
                 continue;
             }
 
             // compute g,h and f for successor
-            let g = cell_details[q.x][q.y].g + 1;
-            let h = manhatten_distance(x, y, target_x, target_y);
+            let g = cell_details[x][y].g + 1;
+            let h = manhatten_distance(next_x, next_y, target_x, target_y);
             let f = g + h as usize;
 
-            // iii) if a node with the same position as successor is in the OPEN list
-            //      which has a lower f than successor, skip this successor
-            if let Some(_) = open_list.iter().find(|c| c.x == x && c.y == y && c.f < f) {
+            // if a node with the same position as successor is in the open list
+            // which has a lower f than successor, skip this successor
+            if cell_details[next_x][next_y].f < f {
                 continue;
             }
 
             // otherwise, add the node to the open list
-            open_list.push(OpenListEntry { x, y, f });
+            open_list.push((next_x, next_y));
             // Update the details of this cell
-            cell_details[x][y].parent_x = q.x as isize;
-            cell_details[x][y].parent_y = q.y as isize;
+            cell_details[next_x][next_y].f = f;
+            cell_details[next_x][next_y].parent_x = x as isize;
+            cell_details[next_x][next_y].parent_y = y as isize;
         }
     }
 
@@ -124,14 +115,14 @@ fn find_target(grid: &Grid) -> (usize, usize) {
     unreachable!("No food found in grid!")
 }
 
-fn lowest_f(list: &[OpenListEntry]) -> usize {
+fn lowest_f(list: &[(usize, usize)], cell_details: &[Vec<CellInfo>]) -> usize {
     assert!(list.len() > 0);
 
     let mut f = usize::MAX;
     let mut i = 0;
-    for (n, cell) in list.iter().enumerate() {
-        if cell.f < f {
-            f = cell.f;
+    for (n, (x, y)) in list.iter().enumerate() {
+        if cell_details[*x][*y].f < f {
+            f = cell_details[*x][*y].f;
             i = n;
         }
     }
