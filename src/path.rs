@@ -8,112 +8,99 @@ struct CellInfo {
     y: usize,
     parent_x: isize,
     parent_y: isize,
-    f: usize,
     g: usize,
 }
 
+#[derive(Default, Clone, Debug)]
+struct OpenListEntry {
+    x: usize,
+    y: usize,
+    f: usize,
+}
+
+// Calculates path as a vector of directions using the A* Search Algorithm.
 // https://www.geeksforgeeks.org/a-search-algorithm/
 pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> {
     let (target_x, target_y) = find_target(grid);
-    debug!(
-        "start: ({},{}) target: ({},{})",
-        start_x, start_y, target_x, target_y
-    );
 
-    // 1.  Initialize the open list
-    let mut open_list: Vec<CellInfo> = Vec::with_capacity(grid.len());
+    // Declare a 2D array of structure to hold the details of a cell.
+    let mut cell_details: Vec<Vec<CellInfo>> = vec![
+        vec![
+            CellInfo {
+                ..Default::default()
+            };
+            grid.len()
+        ];
+        grid.len()
+    ];
+    for (x, row) in cell_details.iter_mut().enumerate() {
+        for (y, cell) in row.iter_mut().enumerate() {
+            cell.x = x;
+            cell.y = y;
+            cell.parent_x = -1;
+            cell.parent_y = -1;
+        }
+    }
 
-    // 2.  Initialize the closed list
-    //     put the starting node on the open list (you can leave its f at zero)
-    let mut closed_list: Vec<Vec<Option<CellInfo>>> = vec![vec![None; grid.len()]; grid.len()];
-    open_list.push(CellInfo {
+    // Create an open list.
+    let mut open_list: Vec<OpenListEntry> = Vec::with_capacity(grid.len() * grid.len());
+
+    // Create a closed list and initialise it to false which means that no cell
+    // has been included yet. This closed list is implemented as a boolean 2D array.
+    let mut closed_list = vec![vec![false; grid.len()]; grid.len()];
+
+    // put the starting node on the open list
+    open_list.push(OpenListEntry {
         x: start_x,
         y: start_y,
-        parent_x: -1,
-        parent_y: -1,
-        ..Default::default()
+        f: 0,
     });
 
-    // 3.  while the open list is not empty
     while !open_list.is_empty() {
-        // a) find the node with the least f on the open list, call it "q"
+        debug!("open_list.len(): {}", open_list.len());
+
+        // pop the node with the least f on the open list
         let i = lowest_f(&open_list);
+        let q = open_list.swap_remove(i);
 
-        // b) pop q off the open list
-        let q = open_list.remove(i);
+        // push it on the closed list
+        closed_list[q.x][q.y] = true;
 
-        // c) generate q's 4 successors
         let successors = generate_successors(q.x, q.y, grid);
-
-        // d) for each successor
-        'successor: for (x, y) in successors.into_iter() {
-            // i) if successor is the goal, stop search
+        for (x, y) in successors.into_iter() {
+            // if successor is the target, stop search
             if x == target_x && y == target_y {
-                closed_list[q.x][q.y] = Some(CellInfo {
-                    x: q.x,
-                    y: q.y,
-                    parent_x: q.parent_x,
-                    parent_y: q.parent_y,
-                    ..Default::default()
-                });
-                closed_list[x][y] = Some(CellInfo {
-                    x,
-                    y,
-                    parent_x: q.x as isize,
-                    parent_y: q.y as isize,
-                    ..Default::default()
-                });
-                return generate_path(
-                    &CellInfo {
-                        x,
-                        y,
-                        parent_x: q.x as isize,
-                        parent_y: q.y as isize,
-                        ..Default::default()
-                    },
-                    &closed_list,
-                );
+                cell_details[x][y].parent_x = q.x as isize;
+                cell_details[x][y].parent_y = q.y as isize;
+                closed_list[x][y] = true;
+                return generate_path(x, y, &cell_details);
             }
 
-            // ii) compute g,h and f for successor
-            let g = q.g + 1;
+            // if the successor is already on the closed list we ignore it
+            if closed_list[x][y] {
+                continue;
+            }
+
+            // compute g,h and f for successor
+            let g = cell_details[q.x][q.y].g + 1;
             let h = manhatten_distance(x, y, target_x, target_y);
             let f = g + h as usize;
 
             // iii) if a node with the same position as successor is in the OPEN list
             //      which has a lower f than successor, skip this successor
-            for c in open_list.iter() {
-                if c.x == x && c.y == y && c.f < f {
-                    continue 'successor;
-                }
-            }
-
-            // iV) if a node with the same position as successor is in the CLOSED list
-            //     which has a lower f than successor, skip this successor
-            if let Some(c) = &closed_list[x][y] {
-                if c.f < f {
-                    continue;
-                }
+            if let Some(_) = open_list.iter().find(|c| c.x == x && c.y == y && c.f < f) {
+                continue;
             }
 
             // otherwise, add the node to the open list
-            open_list.push(CellInfo {
-                x,
-                y,
-                f,
-                g,
-                parent_x: q.x as isize,
-                parent_y: q.y as isize,
-            })
+            open_list.push(OpenListEntry { x, y, f });
+            // Update the details of this cell
+            cell_details[x][y].parent_x = q.x as isize;
+            cell_details[x][y].parent_y = q.y as isize;
         }
-
-        // e) push q on the closed list
-        let (x, y) = (q.x, q.y);
-        closed_list[x][y] = Some(q);
     }
 
     // We didn't find a clear path.
-
     // If we have clear successors we pick a random one.
     let successors = generate_successors(start_x, start_y, grid);
     if successors.len() > 0 {
@@ -122,8 +109,8 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
         return vec![get_direction(start_x, start_y, next_x, next_y)];
     }
 
-    // If not we run east. *shrug*
-    vec![Direction::East]
+    // Brace for impact!
+    vec![]
 }
 
 fn find_target(grid: &Grid) -> (usize, usize) {
@@ -137,7 +124,7 @@ fn find_target(grid: &Grid) -> (usize, usize) {
     unreachable!("No food found in grid!")
 }
 
-fn lowest_f(list: &[CellInfo]) -> usize {
+fn lowest_f(list: &[OpenListEntry]) -> usize {
     assert!(list.len() > 0);
 
     let mut f = usize::MAX;
@@ -189,24 +176,20 @@ fn generate_successors(x: usize, y: usize, grid: &Grid) -> Vec<(usize, usize)> {
         .collect()
 }
 
-fn generate_path(start: &CellInfo, list: &[Vec<Option<CellInfo>>]) -> Vec<Direction> {
+fn generate_path(start_x: usize, start_y: usize, cell_details: &[Vec<CellInfo>]) -> Vec<Direction> {
     let mut directions: Vec<Direction> = Vec::new();
-    let mut x = start.x;
-    let mut y = start.y;
-    let mut parent_x = start.parent_x;
-    let mut parent_y = start.parent_y;
-    while parent_x >= 0 && parent_y >= 0 {
-        match &list[parent_x as usize][parent_y as usize] {
-            Some(parent) => {
-                let direction = get_direction(parent.x, parent.y, x, y);
-                directions.push(direction);
-                x = parent.x;
-                y = parent.y;
-                parent_x = parent.parent_x;
-                parent_y = parent.parent_y;
-            }
-            None => break,
+    let mut x = start_x;
+    let mut y = start_y;
+    loop {
+        let parent_x = cell_details[x][y].parent_x;
+        let parent_y = cell_details[x][y].parent_y;
+        if parent_x < 0 || parent_y < 0 {
+            break;
         }
+        let direction = get_direction(parent_x as usize, parent_y as usize, x, y);
+        directions.push(direction);
+        x = parent_x as usize;
+        y = parent_y as usize;
     }
     directions
 }

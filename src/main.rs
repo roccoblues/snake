@@ -17,7 +17,7 @@ const SPEED: Duration = Duration::from_millis(150);
 #[derive(Parser)]
 struct Cli {
     /// Width and height of the grid
-    #[arg(short, long, default_value_t = 25)]
+    #[arg(short, long, default_value_t = 20)]
     grid_size: usize,
 
     /// Autopilot mode
@@ -63,7 +63,7 @@ fn main() {
                         if path.is_empty() {
                             path = path::solve(&grid, *snake.front().unwrap());
                         }
-                        // if no path can't be found continue in the current direction
+                        // if no path can't be found we continue in the current direction
                         direction = path.pop().unwrap_or(direction);
                     }
 

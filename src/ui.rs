@@ -47,7 +47,7 @@ pub fn draw(grid: &Vec<Vec<Cell>>, steps: u32, snake_length: usize) -> crossterm
     let x_adjust = (rows - size * 2) / 2;
     let y_adjust = (cols - size) / 2;
 
-    // drawp grid
+    // draw grid
     for (x, v) in grid.iter().enumerate() {
         for (y, cell) in v.iter().enumerate() {
             queue!(
