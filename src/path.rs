@@ -1,5 +1,6 @@
 use crate::game::{Cell, Direction, Grid};
 use log::{debug, error, info, log_enabled, Level};
+use rand::prelude::*;
 
 #[derive(Default, Clone, Debug)]
 struct CellInfo {
@@ -42,9 +43,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
         let q = open_list.remove(i);
 
         // c) generate q's 4 successors
-        let successors = generate_successors(&q, grid);
-
-        debug!("successors: {:?}", successors);
+        let successors = generate_successors(q.x, q.y, grid);
 
         // d) for each successor
         'successor: for (x, y) in successors.into_iter() {
@@ -113,7 +112,18 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
         closed_list[x][y] = Some(q);
     }
 
-    unreachable!()
+    // We didn't find a clear path.
+
+    // If we have clear successors we pick a random one.
+    let successors = generate_successors(start_x, start_y, grid);
+    if successors.len() > 0 {
+        let (next_x, next_y) =
+            successors[thread_rng().gen_range(0..=successors.len() - 1) as usize];
+        return vec![get_direction(start_x, start_y, next_x, next_y)];
+    }
+
+    // If not we run east. *shrug*
+    vec![Direction::East]
 }
 
 fn find_target(grid: &Grid) -> (usize, usize) {
@@ -153,32 +163,24 @@ fn lowest_f(list: &[CellInfo]) -> usize {
 // S --> South  (x+1, y  )
 // E --> East   (x,   y+1)
 // W --> West   (x,   y-1)
-fn generate_successors(cell: &CellInfo, grid: &Grid) -> Vec<(usize, usize)> {
+fn generate_successors(x: usize, y: usize, grid: &Grid) -> Vec<(usize, usize)> {
     let mut result: Vec<(usize, usize)> = Vec::with_capacity(4);
 
     // north
-    if cell.x > 0 {
-        let x = cell.x - 1;
-        let y = cell.y;
-        result.push((x, y))
+    if x > 0 {
+        result.push((x - 1, y))
     }
     // south
-    if cell.x + 1 < grid.len() {
-        let x = cell.x + 1;
-        let y = cell.y;
-        result.push((x, y))
+    if x + 1 < grid.len() {
+        result.push((x + 1, y))
     }
     // east
-    if cell.y + 1 < grid.len() {
-        let x = cell.x;
-        let y = cell.y + 1;
-        result.push((x, y))
+    if y + 1 < grid.len() {
+        result.push((x, y + 1))
     }
     // west
-    if cell.y > 0 {
-        let x = cell.x;
-        let y = cell.y - 1;
-        result.push((x, y))
+    if y > 0 {
+        result.push((x, y - 1))
     }
 
     result
@@ -196,7 +198,6 @@ fn generate_path(start: &CellInfo, list: &[Vec<Option<CellInfo>>]) -> Vec<Direct
     while parent_x >= 0 && parent_y >= 0 {
         match &list[parent_x as usize][parent_y as usize] {
             Some(parent) => {
-                debug!("({},{}) -> ({},{})", parent.x, parent.y, x, y);
                 let direction = get_direction(parent.x, parent.y, x, y);
                 directions.push(direction);
                 x = parent.x;
@@ -207,7 +208,7 @@ fn generate_path(start: &CellInfo, list: &[Vec<Option<CellInfo>>]) -> Vec<Direct
             None => break,
         }
     }
-    directions.into_iter().rev().collect()
+    directions
 }
 
 fn get_direction(from_x: usize, from_y: usize, to_x: usize, to_y: usize) -> Direction {

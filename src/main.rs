@@ -63,7 +63,8 @@ fn main() {
                         if path.is_empty() {
                             path = path::solve(&grid, *snake.front().unwrap());
                         }
-                        direction = path.pop().unwrap();
+                        // if no path can't be found continue in the current direction
+                        direction = path.pop().unwrap_or(direction);
                     }
 
                     // advance the snake one cell
