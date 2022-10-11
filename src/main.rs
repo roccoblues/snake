@@ -1,6 +1,7 @@
 use clap::Parser;
 use crossbeam_channel::{select, tick, unbounded};
 use game::Direction;
+use log::{debug, error, info, log_enabled, Level};
 use std::thread;
 use std::time::Duration;
 use ui::Input;
@@ -25,6 +26,8 @@ struct Cli {
 }
 
 fn main() {
+    env_logger::init();
+
     let args = Cli::parse();
 
     let mut end = false;
@@ -58,7 +61,7 @@ fn main() {
                     if args.autopilot {
                         // calculate the path to the food as a list of directions
                         if path.is_empty() {
-                            path = path::solve(&grid, snake.front().unwrap(), direction);
+                            path = path::solve(&grid, *snake.front().unwrap());
                         }
                         direction = path.pop().unwrap();
                     }
