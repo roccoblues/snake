@@ -11,14 +11,19 @@ struct Point {
 #[derive(Default, Debug)]
 struct PointInfo {
     parent: Option<Point>,
-    g: usize, // the movement cost to move from the starting point to a given square on the grid, following the path generated to get there.
-    h: usize, // the estimated movement cost to move from that given square on the grid to the final destination
-    f: usize, // g + h
+    g: usize, // the movement cost to move from the starting point to this point on the grid, following the path generated to get there.
+    h: usize, // the estimated movement cost to move from that point on the grid to the final destination
+}
+
+impl PointInfo {
+    fn f(&self) -> usize {
+        self.g + self.h
+    }
 }
 
 type PointDetails = HashMap<Point, PointInfo>;
 
-// Calculates path as a vector of directions using the A* Search Algorithm.
+// Calculates a path as a vector of directions using the A* Search Algorithm.
 // https://www.geeksforgeeks.org/a-search-algorithm/
 pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> {
     let start = Point {
@@ -86,11 +91,10 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
             match point_details.get_mut(&next) {
                 Some(next_info) => {
                     // which has a lower f than successor, skip this successor
-                    if next_info.f < f {
+                    if next_info.f() < f {
                         continue;
                     }
                     // update the details of this point
-                    next_info.f = f;
                     next_info.g = g;
                     next_info.h = h;
                     next_info.parent = Some(p);
@@ -104,7 +108,6 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
                         PointInfo {
                             g,
                             h,
-                            f,
                             parent: Some(p),
                         },
                     );
@@ -144,8 +147,8 @@ fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
     for (n, p) in list.iter().enumerate() {
         match point_details.get(p) {
             Some(info) => {
-                if info.f < f {
-                    f = info.f;
+                if info.f() < f {
+                    f = info.f();
                     i = n;
                 }
             }
