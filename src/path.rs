@@ -87,22 +87,21 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
             let h = manhatten_distance(next, target);
             let f = g + h as usize;
 
-            // if a node with the same position as successor is in the open list
             match point_details.get_mut(&next) {
+                // if a node with the same position as successor is in the open list
                 Some(next_info) => {
                     // which has a lower f than successor, skip this successor
                     if next_info.f() < f {
                         continue;
                     }
-                    // update the details of this point
+                    // otherwise, update the details of this point
                     next_info.g = g;
                     next_info.h = h;
                     next_info.parent = Some(p);
                 }
+                // if not, add the node to the open list
                 None => {
-                    // otherwise, add the node to the open list
                     open_list.push(next);
-                    // record the details of this point
                     point_details.insert(
                         next,
                         PointInfo {
@@ -117,6 +116,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     }
 
     // We didn't find a clear path.
+
     // If we have clear successors we pick a random one.
     let successors = generate_successors(&start, grid);
     if !successors.is_empty() {
@@ -146,9 +146,9 @@ fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
     let mut i = 0;
     for (n, p) in list.iter().enumerate() {
         match point_details.get(p) {
-            Some(info) => {
-                if info.f() < f {
-                    f = info.f();
+            Some(p) => {
+                if p.f() < f {
+                    f = p.f();
                     i = n;
                 }
             }
@@ -221,9 +221,8 @@ fn get_direction(from: &Point, to: &Point) -> Direction {
     }
 }
 
-fn manhatten_distance(start: Point, target: Point) -> usize {
-    let distance =
-        i32::abs(start.x as i32 - target.x as i32) + i32::abs(start.y as i32 - target.y as i32);
+fn manhatten_distance(from: Point, to: Point) -> usize {
+    let distance = i32::abs(from.x as i32 - to.x as i32) + i32::abs(from.y as i32 - to.y as i32);
     distance.try_into().unwrap()
 }
 
