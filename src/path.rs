@@ -70,7 +70,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
             }
 
             // if successor is the target, stop search
-            if next.x == target.x && next.y == target.y {
+            if next == target {
                 point_details.insert(
                     next,
                     PointInfo {
