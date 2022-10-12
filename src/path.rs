@@ -1,37 +1,31 @@
 use crate::game::{Cell, Direction, Grid};
 use log::{debug, error, info, log_enabled, Level};
 use rand::prelude::*;
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+struct Point {
+    x: usize,
+    y: usize,
+}
 
 #[derive(Default, Clone, Debug)]
 struct CellInfo {
-    parent_x: isize,
-    parent_y: isize,
-    g: usize,
-    f: usize,
+    parent: Option<Point>,
+    g: usize, // the movement cost to move from the starting point to a given square on the grid, following the path generated to get there.
+    h: usize, // the estimated movement cost to move from that given square on the grid to the final destination
+    f: usize, // g + h
 }
+
+type CellDetails = HashMap<Point, CellInfo>;
 
 // Calculates path as a vector of directions using the A* Search Algorithm.
 // https://www.geeksforgeeks.org/a-search-algorithm/
 pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> {
     let (target_x, target_y) = find_target(grid);
 
-    // Declare a 2D array of structure to hold the details of a cell.
-    let mut cell_details: Vec<Vec<CellInfo>> = vec![
-        vec![
-            CellInfo {
-                f: usize::MAX,
-                ..Default::default()
-            };
-            grid.len()
-        ];
-        grid.len()
-    ];
-    for row in cell_details.iter_mut() {
-        for cell in row.iter_mut() {
-            cell.parent_x = -1;
-            cell.parent_y = -1;
-        }
-    }
+    // Use a hashmap to hold the details of a cell.
+    let mut cell_details = HashMap::new();
 
     // Create an open list.
     let mut open_list: Vec<(usize, usize)> = Vec::with_capacity(grid.len() * grid.len());
@@ -42,6 +36,17 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
 
     // put the starting node on the open list
     open_list.push((start_x, start_y));
+
+    // and record it details
+    cell_details.insert(
+        Point {
+            x: start_x,
+            y: start_y,
+        },
+        CellInfo {
+            ..Default::default()
+        },
+    );
 
     while !open_list.is_empty() {
         debug!("open_list.len(): {}", open_list.len());
@@ -55,35 +60,66 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
 
         let successors = generate_successors(x, y, grid);
         for (next_x, next_y) in successors.into_iter() {
-            // if successor is the target, stop search
-            if next_x == target_x && next_y == target_y {
-                cell_details[next_x][next_y].parent_x = x as isize;
-                cell_details[next_x][next_y].parent_y = y as isize;
-                return generate_path(next_x, next_y, &cell_details);
-            }
-
             // if the successor is already on the closed list we ignore it
             if closed_list[next_x][next_y] {
                 continue;
             }
 
+            // if successor is the target, stop search
+            if next_x == target_x && next_y == target_y {
+                cell_details.insert(
+                    Point {
+                        x: next_x,
+                        y: next_y,
+                    },
+                    CellInfo {
+                        parent: Some(Point { x, y }),
+                        ..Default::default()
+                    },
+                );
+                return generate_path(next_x, next_y, &cell_details);
+            }
+
             // compute g,h and f for successor
-            let g = cell_details[x][y].g + 1;
+            let info = cell_details.get(&Point { x, y }).unwrap();
+            let g = info.g + 1;
             let h = manhatten_distance(next_x, next_y, target_x, target_y);
             let f = g + h as usize;
 
             // if a node with the same position as successor is in the open list
-            // which has a lower f than successor, skip this successor
-            if cell_details[next_x][next_y].f < f {
-                continue;
+            match cell_details.get_mut(&Point {
+                x: next_x,
+                y: next_y,
+            }) {
+                Some(next_info) => {
+                    // which has a lower f than successor, skip this successor
+                    if next_info.f < f {
+                        continue;
+                    }
+                    // update the details of this cell
+                    next_info.f = f;
+                    next_info.g = g;
+                    next_info.h = h;
+                    next_info.parent = Some(Point { x, y });
+                }
+                None => {
+                    // otherwise, add the node to the open list
+                    open_list.push((next_x, next_y));
+                    // record the details of this cell
+                    cell_details.insert(
+                        Point {
+                            x: next_x,
+                            y: next_y,
+                        },
+                        CellInfo {
+                            g,
+                            h,
+                            f,
+                            parent: Some(Point { x, y }),
+                        },
+                    );
+                }
             }
-
-            // otherwise, add the node to the open list
-            open_list.push((next_x, next_y));
-            // Update the details of this cell
-            cell_details[next_x][next_y].f = f;
-            cell_details[next_x][next_y].parent_x = x as isize;
-            cell_details[next_x][next_y].parent_y = y as isize;
         }
     }
 
@@ -111,15 +147,20 @@ fn find_target(grid: &Grid) -> (usize, usize) {
     unreachable!("No food found in grid!")
 }
 
-fn lowest_f(list: &[(usize, usize)], cell_details: &[Vec<CellInfo>]) -> usize {
+fn lowest_f(list: &[(usize, usize)], cell_details: &CellDetails) -> usize {
     assert!(list.len() > 0);
 
     let mut f = usize::MAX;
     let mut i = 0;
     for (n, (x, y)) in list.iter().enumerate() {
-        if cell_details[*x][*y].f < f {
-            f = cell_details[*x][*y].f;
-            i = n;
+        match cell_details.get(&Point { x: *x, y: *y }) {
+            Some(info) => {
+                if info.f < f {
+                    f = info.f;
+                    i = n;
+                }
+            }
+            None => unreachable!(),
         }
     }
     i
@@ -163,20 +204,23 @@ fn generate_successors(x: usize, y: usize, grid: &Grid) -> Vec<(usize, usize)> {
         .collect()
 }
 
-fn generate_path(start_x: usize, start_y: usize, cell_details: &[Vec<CellInfo>]) -> Vec<Direction> {
+fn generate_path(start_x: usize, start_y: usize, cell_details: &CellDetails) -> Vec<Direction> {
     let mut directions: Vec<Direction> = Vec::new();
     let mut x = start_x;
     let mut y = start_y;
     loop {
-        let parent_x = cell_details[x][y].parent_x;
-        let parent_y = cell_details[x][y].parent_y;
-        if parent_x < 0 || parent_y < 0 {
-            break;
+        match cell_details.get(&Point { x, y }) {
+            Some(info) => match &info.parent {
+                Some(parent) => {
+                    let direction = get_direction(parent.x, parent.y, x, y);
+                    directions.push(direction);
+                    x = parent.x;
+                    y = parent.y;
+                }
+                None => break,
+            },
+            None => unreachable!(),
         }
-        let direction = get_direction(parent_x as usize, parent_y as usize, x, y);
-        directions.push(direction);
-        x = parent_x as usize;
-        y = parent_y as usize;
     }
     directions
 }
@@ -231,10 +275,10 @@ mod tests {
         assert_eq!(
             solve(&grid, (0, 0)),
             vec![
-                Direction::South,
-                Direction::South,
                 Direction::East,
                 Direction::East,
+                Direction::South,
+                Direction::South,
             ]
         )
     }
