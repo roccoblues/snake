@@ -6,7 +6,7 @@ A terminal based snake game with autopilot.
 
 ## Rationale
 
-I was looking for a small project to start learning Rust when I stumbled upon [sssnake](https://github.com/AngelJumbo/sssnake) and decided to see if I could implement someting similar in Rust.
+I was looking for a small project to start learning Rust when I stumbled upon [sssnake](https://github.com/AngelJumbo/sssnake) and decided to see if I could implement something similar in Rust.
 
 ## Usage
 
