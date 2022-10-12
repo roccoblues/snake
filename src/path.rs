@@ -4,8 +4,6 @@ use rand::prelude::*;
 
 #[derive(Default, Clone, Debug)]
 struct CellInfo {
-    x: usize,
-    y: usize,
     parent_x: isize,
     parent_y: isize,
     g: usize,
@@ -28,10 +26,8 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
         ];
         grid.len()
     ];
-    for (x, row) in cell_details.iter_mut().enumerate() {
-        for (y, cell) in row.iter_mut().enumerate() {
-            cell.x = x;
-            cell.y = y;
+    for row in cell_details.iter_mut() {
+        for cell in row.iter_mut() {
             cell.parent_x = -1;
             cell.parent_y = -1;
         }
@@ -235,10 +231,10 @@ mod tests {
         assert_eq!(
             solve(&grid, (0, 0)),
             vec![
-                Direction::East,
-                Direction::East,
                 Direction::South,
                 Direction::South,
+                Direction::East,
+                Direction::East,
             ]
         )
     }
@@ -252,12 +248,12 @@ mod tests {
         assert_eq!(
             solve(&grid, (0, 0)),
             vec![
-                Direction::South,
-                Direction::South,
-                Direction::East,
-                Direction::East,
                 Direction::North,
                 Direction::North,
+                Direction::East,
+                Direction::East,
+                Direction::South,
+                Direction::South,
             ]
         )
     }
@@ -271,46 +267,13 @@ mod tests {
         assert_eq!(
             solve(&grid, (2, 2)),
             vec![
-                Direction::North,
-                Direction::North,
-                Direction::West,
-                Direction::West,
                 Direction::South,
                 Direction::South,
+                Direction::West,
+                Direction::West,
+                Direction::North,
+                Direction::North,
             ]
-        )
-    }
-
-    #[test]
-    fn generate_path_works() {
-        let start = CellInfo {
-            x: 2,
-            y: 0,
-            parent_x: 1,
-            parent_y: 0,
-            ..Default::default()
-        };
-
-        let mut list: Vec<Vec<Option<CellInfo>>> = vec![vec![None; 3]; 3];
-        list[0][0] = Some(CellInfo {
-            parent_x: -1,
-            parent_y: -1,
-            ..Default::default()
-        });
-        list[1][0] = Some(CellInfo {
-            x: 1,
-            y: 0,
-            ..Default::default()
-        });
-        list[2][0] = Some(CellInfo {
-            parent_x: 1,
-            parent_y: 0,
-            ..Default::default()
-        });
-
-        assert_eq!(
-            generate_path(&start, &list),
-            vec![Direction::East, Direction::East]
         )
     }
 }
