@@ -77,7 +77,7 @@ fn remove_tail(snake: &mut Snake) -> (usize, usize) {
 pub type Grid = Vec<Vec<Cell>>;
 
 pub fn create_grid(size: usize) -> Grid {
-    assert!(size >= 5, "Minimum grid size is 5!");
+    assert!(size >= 10, "Minimum grid size is 10!");
     let mut cells = vec![vec![Cell::Free; size]; size];
     for x in 0..=size - 1 {
         for y in 0..=size - 1 {

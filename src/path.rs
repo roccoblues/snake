@@ -1,5 +1,4 @@
 use crate::game::{Cell, Direction, Grid};
-use log::debug;
 use rand::prelude::*;
 use std::collections::HashMap;
 
@@ -51,8 +50,6 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     );
 
     while !open_list.is_empty() {
-        debug!("open_list.len(): {}", open_list.len());
-
         // pop the node with the lowest f on the open list
         let i = lowest_f(&open_list, &cell_details);
         let p = open_list.swap_remove(i);
@@ -119,7 +116,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     // We didn't find a clear path.
     // If we have clear successors we pick a random one.
     let successors = generate_successors(&start, grid);
-    if successors.len() > 0 {
+    if !successors.is_empty() {
         let next = successors[thread_rng().gen_range(0..=successors.len() - 1) as usize];
         return vec![get_direction(&start, &next)];
     }
@@ -140,12 +137,12 @@ fn find_target(grid: &Grid) -> Point {
 }
 
 fn lowest_f(list: &[Point], cell_details: &CellDetails) -> usize {
-    assert!(list.len() > 0);
+    assert!(!list.is_empty());
 
     let mut f = usize::MAX;
     let mut i = 0;
     for (n, p) in list.iter().enumerate() {
-        match cell_details.get(&p) {
+        match cell_details.get(p) {
             Some(info) => {
                 if info.f < f {
                     f = info.f;

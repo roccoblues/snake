@@ -47,6 +47,9 @@ pub fn draw(grid: &Vec<Vec<Cell>>, steps: u32, snake_length: usize) -> crossterm
     let x_adjust = (rows - size * 2) / 2;
     let y_adjust = (cols - size) / 2;
 
+    assert!(rows > size * 2, "Terminal width isn't enough!");
+    assert!(cols > size + 1, "Terminal height isn't enough!");
+
     // draw grid
     for (x, v) in grid.iter().enumerate() {
         for (y, cell) in v.iter().enumerate() {

@@ -1,7 +1,6 @@
 use clap::Parser;
 use crossbeam_channel::{select, tick, unbounded};
 use game::Direction;
-use log::{debug, error, info, log_enabled, Level};
 use std::thread;
 use std::time::Duration;
 use ui::Input;
@@ -10,12 +9,13 @@ mod game;
 mod path;
 mod ui;
 
-// snake advance and ui redraw interval
-const SPEED: Duration = Duration::from_millis(150);
-
 /// Game of snake.
 #[derive(Parser)]
 struct Cli {
+    /// Snake advance interval in ms
+    #[arg(short, long, default_value_t = 150)]
+    interval: u64,
+
     /// Width and height of the grid
     #[arg(short, long, default_value_t = 20)]
     grid_size: usize,
@@ -40,7 +40,7 @@ fn main() {
     game::spawn_food(&mut grid);
     let mut direction = game::random_direction();
 
-    let ticks = tick(SPEED);
+    let ticks = tick(Duration::from_millis(args.interval));
 
     ui::init().unwrap();
     ui::draw(&grid, steps, snake.len()).unwrap();
@@ -58,8 +58,8 @@ fn main() {
         select! {
             recv(ticks) -> _ => {
                 if !end && !paused{
+                    // calculate the path to the food as a list of directions
                     if args.autopilot {
-                        // calculate the path to the food as a list of directions
                         if path.is_empty() {
                             path = path::solve(&grid, *snake.front().unwrap());
                         }
