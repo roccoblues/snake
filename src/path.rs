@@ -36,17 +36,15 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     // Use a hashmap to hold the details of a point.
     let mut point_details = HashMap::new();
 
-    // Create an open list.
+    // Create open list.
     let mut open_list: Vec<Point> = Vec::with_capacity(grid.len() * grid.len());
 
-    // Create a closed list and initialise it to false which means that no point
+    // Create closed list and initialise it to false which means that no point
     // has been included yet. This closed list is implemented as a boolean 2D array.
     let mut closed_list = vec![vec![false; grid.len()]; grid.len()];
 
-    // put the starting node on the open list
+    // Put the starting point on the open list.
     open_list.push(start);
-
-    // and record it details
     point_details.insert(
         start,
         PointInfo {
@@ -55,21 +53,21 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     );
 
     while !open_list.is_empty() {
-        // pop the node with the lowest f on the open list
+        // Pop the point with the lowest f on the open list.
         let i = lowest_f(&open_list, &point_details);
         let p = open_list.swap_remove(i);
 
-        // push it on the closed list
+        // Push it on the closed list.
         closed_list[p.x][p.y] = true;
 
         let successors = generate_successors(&p, grid);
         for next in successors.into_iter() {
-            // if the successor is already on the closed list we ignore it
+            // If the successor is already on the closed list we ignore it.
             if closed_list[next.x][next.y] {
                 continue;
             }
 
-            // if successor is the target, stop search
+            // If successor is the target, stop search and generate path.
             if next == target {
                 point_details.insert(
                     next,
@@ -81,25 +79,25 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
                 return generate_path(&next, &point_details);
             }
 
-            // compute g,h and f for successor
+            // Compute g,h and f for successor.
             let info = point_details.get(&p).unwrap();
             let g = info.g + 1;
             let h = manhatten_distance(next, target);
             let f = g + h as usize;
 
             match point_details.get_mut(&next) {
-                // if a node with the same position as successor is in the open list
+                // If a point with the same position as successor is in the open list.
                 Some(next_info) => {
-                    // which has a lower f than successor, skip this successor
+                    // Ghich has a lower f than successor, skip this successor.
                     if next_info.f() < f {
                         continue;
                     }
-                    // otherwise, update the details of this point
+                    // Otherwise, update the details of this point.
                     next_info.g = g;
                     next_info.h = h;
                     next_info.parent = Some(p);
                 }
-                // if not, add the node to the open list
+                // If not, add the point to the open list.
                 None => {
                     open_list.push(next);
                     point_details.insert(
@@ -117,7 +115,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
 
     // We didn't find a clear path.
 
-    // If we have clear successors we pick a random one.
+    // If we have valid successors we simply pick a random one.
     let successors = generate_successors(&start, grid);
     if !successors.is_empty() {
         let next = successors[thread_rng().gen_range(0..=successors.len() - 1) as usize];
