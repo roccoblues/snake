@@ -1,4 +1,4 @@
-use crate::game::{Cell, Direction, Grid};
+use crate::game::{Direction, Grid, Tile};
 use rand::prelude::*;
 use std::collections::HashMap;
 
@@ -9,14 +9,14 @@ struct Point {
 }
 
 #[derive(Default, Debug)]
-struct CellInfo {
+struct PointInfo {
     parent: Option<Point>,
     g: usize, // the movement cost to move from the starting point to a given square on the grid, following the path generated to get there.
     h: usize, // the estimated movement cost to move from that given square on the grid to the final destination
     f: usize, // g + h
 }
 
-type CellDetails = HashMap<Point, CellInfo>;
+type PointDetails = HashMap<Point, PointInfo>;
 
 // Calculates path as a vector of directions using the A* Search Algorithm.
 // https://www.geeksforgeeks.org/a-search-algorithm/
@@ -28,13 +28,13 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
 
     let target = find_target(grid);
 
-    // Use a hashmap to hold the details of a cell.
-    let mut cell_details = HashMap::new();
+    // Use a hashmap to hold the details of a point.
+    let mut point_details = HashMap::new();
 
     // Create an open list.
     let mut open_list: Vec<Point> = Vec::with_capacity(grid.len() * grid.len());
 
-    // Create a closed list and initialise it to false which means that no cell
+    // Create a closed list and initialise it to false which means that no point
     // has been included yet. This closed list is implemented as a boolean 2D array.
     let mut closed_list = vec![vec![false; grid.len()]; grid.len()];
 
@@ -42,16 +42,16 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     open_list.push(start);
 
     // and record it details
-    cell_details.insert(
+    point_details.insert(
         start,
-        CellInfo {
+        PointInfo {
             ..Default::default()
         },
     );
 
     while !open_list.is_empty() {
         // pop the node with the lowest f on the open list
-        let i = lowest_f(&open_list, &cell_details);
+        let i = lowest_f(&open_list, &point_details);
         let p = open_list.swap_remove(i);
 
         // push it on the closed list
@@ -66,30 +66,30 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
 
             // if successor is the target, stop search
             if next.x == target.x && next.y == target.y {
-                cell_details.insert(
+                point_details.insert(
                     next,
-                    CellInfo {
+                    PointInfo {
                         parent: Some(p),
                         ..Default::default()
                     },
                 );
-                return generate_path(&next, &cell_details);
+                return generate_path(&next, &point_details);
             }
 
             // compute g,h and f for successor
-            let info = cell_details.get(&p).unwrap();
+            let info = point_details.get(&p).unwrap();
             let g = info.g + 1;
             let h = manhatten_distance(next, target);
             let f = g + h as usize;
 
             // if a node with the same position as successor is in the open list
-            match cell_details.get_mut(&next) {
+            match point_details.get_mut(&next) {
                 Some(next_info) => {
                     // which has a lower f than successor, skip this successor
                     if next_info.f < f {
                         continue;
                     }
-                    // update the details of this cell
+                    // update the details of this point
                     next_info.f = f;
                     next_info.g = g;
                     next_info.h = h;
@@ -98,10 +98,10 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
                 None => {
                     // otherwise, add the node to the open list
                     open_list.push(next);
-                    // record the details of this cell
-                    cell_details.insert(
+                    // record the details of this point
+                    point_details.insert(
                         next,
-                        CellInfo {
+                        PointInfo {
                             g,
                             h,
                             f,
@@ -127,8 +127,8 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
 
 fn find_target(grid: &Grid) -> Point {
     for (x, row) in grid.iter().enumerate() {
-        for (y, cell) in row.iter().enumerate() {
-            if *cell == Cell::Food {
+        for (y, tile) in row.iter().enumerate() {
+            if *tile == Tile::Food {
                 return Point { x, y };
             }
         }
@@ -136,13 +136,13 @@ fn find_target(grid: &Grid) -> Point {
     unreachable!("No food found in grid!")
 }
 
-fn lowest_f(list: &[Point], cell_details: &CellDetails) -> usize {
+fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
     assert!(!list.is_empty());
 
     let mut f = usize::MAX;
     let mut i = 0;
     for (n, p) in list.iter().enumerate() {
-        match cell_details.get(p) {
+        match point_details.get(p) {
             Some(info) => {
                 if info.f < f {
                     f = info.f;
@@ -155,18 +155,12 @@ fn lowest_f(list: &[Point], cell_details: &CellDetails) -> usize {
     i
 }
 
-// Generate all the 4 successor of this cell
+// Generate all valid successors of a point.
 //           N
 //           |
-//      W--Cell--E
+//      W--Point--E
 //           |
 //           S
-// Cell-->Popped Cell (x,y)
-//
-// N --> North  (x-1, y  )
-// S --> South  (x+1, y  )
-// E --> East   (x,   y+1)
-// W --> West   (x,   y-1)
 fn generate_successors(p: &Point, grid: &Grid) -> Vec<Point> {
     let mut result: Vec<Point> = Vec::with_capacity(4);
 
@@ -189,15 +183,15 @@ fn generate_successors(p: &Point, grid: &Grid) -> Vec<Point> {
 
     result
         .into_iter()
-        .filter(|p| grid[p.x][p.y] == Cell::Free || grid[p.x][p.y] == Cell::Food)
+        .filter(|p| grid[p.x][p.y] == Tile::Free || grid[p.x][p.y] == Tile::Food)
         .collect()
 }
 
-fn generate_path(start: &Point, cell_details: &CellDetails) -> Vec<Direction> {
+fn generate_path(start: &Point, point_details: &PointDetails) -> Vec<Direction> {
     let mut directions: Vec<Direction> = Vec::new();
     let mut p = start;
     loop {
-        match cell_details.get(p) {
+        match point_details.get(p) {
             Some(info) => match &info.parent {
                 Some(parent) => {
                     let direction = get_direction(parent, p);
@@ -236,15 +230,15 @@ mod tests {
 
     #[test]
     fn solve_path_simple() {
-        let mut grid: Vec<Vec<Cell>> = vec![vec![Cell::Free; 3]; 3];
-        grid[2][0] = Cell::Food;
+        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
+        grid[2][0] = Tile::Food;
         assert_eq!(solve(&grid, (0, 0)), vec![Direction::East, Direction::East])
     }
 
     #[test]
     fn solve_path_diagonal() {
-        let mut grid: Vec<Vec<Cell>> = vec![vec![Cell::Free; 3]; 3];
-        grid[2][2] = Cell::Food;
+        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
+        grid[2][2] = Tile::Food;
         assert_eq!(
             solve(&grid, (0, 0)),
             vec![
@@ -258,10 +252,10 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle() {
-        let mut grid: Vec<Vec<Cell>> = vec![vec![Cell::Free; 3]; 3];
-        grid[1][0] = Cell::Obstacle;
-        grid[1][1] = Cell::Obstacle;
-        grid[2][0] = Cell::Food;
+        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
+        grid[1][0] = Tile::Obstacle;
+        grid[1][1] = Tile::Obstacle;
+        grid[2][0] = Tile::Food;
         assert_eq!(
             solve(&grid, (0, 0)),
             vec![
@@ -277,10 +271,10 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle_reverse() {
-        let mut grid: Vec<Vec<Cell>> = vec![vec![Cell::Free; 3]; 3];
-        grid[1][1] = Cell::Obstacle;
-        grid[1][2] = Cell::Obstacle;
-        grid[0][2] = Cell::Food;
+        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
+        grid[1][1] = Tile::Obstacle;
+        grid[1][2] = Tile::Obstacle;
+        grid[0][2] = Tile::Food;
         assert_eq!(
             solve(&grid, (2, 2)),
             vec![

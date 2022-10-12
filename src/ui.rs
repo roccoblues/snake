@@ -1,4 +1,4 @@
-use crate::game::Cell;
+use crate::game::Tile;
 use crossterm::event::{read, Event, KeyCode};
 use crossterm::style::{Attribute, Print, StyledContent, Stylize};
 use crossterm::terminal::{
@@ -37,8 +37,8 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
-pub fn draw(grid: &Vec<Vec<Cell>>, steps: u32, snake_length: usize) -> crossterm::Result<()> {
-    // We use two characters to represent a cell. So we need to make sure to double
+pub fn draw(grid: &Vec<Vec<Tile>>, steps: u32, snake_length: usize) -> crossterm::Result<()> {
+    // We use two characters to represent a tile. So we need to make sure to double
     // the x value when we actually draw the grid.
 
     // adjust x+y to center grid on screen
@@ -52,11 +52,11 @@ pub fn draw(grid: &Vec<Vec<Cell>>, steps: u32, snake_length: usize) -> crossterm
 
     // draw grid
     for (x, v) in grid.iter().enumerate() {
-        for (y, cell) in v.iter().enumerate() {
+        for (y, tile) in v.iter().enumerate() {
             queue!(
                 stdout(),
                 cursor::MoveTo(x as u16 * 2 + x_adjust, y as u16 + y_adjust),
-                style::PrintStyledContent(cell_to_symbol(x, y, size as usize, cell))
+                style::PrintStyledContent(tile_to_symbol(x, y, size as usize, tile))
             )?
         }
     }
@@ -77,12 +77,12 @@ pub fn draw(grid: &Vec<Vec<Cell>>, steps: u32, snake_length: usize) -> crossterm
     stdout().flush()
 }
 
-fn cell_to_symbol(x: usize, y: usize, size: usize, cell: &Cell) -> StyledContent<&str> {
-    match cell {
-        Cell::Free => "  ".attribute(Attribute::Reset),
-        Cell::Snake => "██".green(),
-        Cell::Food => "██".yellow(),
-        Cell::Obstacle => {
+fn tile_to_symbol(x: usize, y: usize, size: usize, tile: &Tile) -> StyledContent<&str> {
+    match tile {
+        Tile::Free => "  ".attribute(Attribute::Reset),
+        Tile::Snake => "██".green(),
+        Tile::Food => "██".yellow(),
+        Tile::Obstacle => {
             if x == 0 {
                 // first column
                 if y == 0 {
@@ -108,7 +108,7 @@ fn cell_to_symbol(x: usize, y: usize, size: usize, cell: &Cell) -> StyledContent
                 "▓▓".white()
             }
         }
-        Cell::Crash => "××".red().on_white(),
+        Tile::Crash => "××".red().on_white(),
     }
 }
 

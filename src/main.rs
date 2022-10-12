@@ -38,7 +38,6 @@ fn main() {
     let obstacle_count = grid.len() / 2;
     game::spawn_obstacles(&mut grid, obstacle_count);
     game::spawn_food(&mut grid);
-    let mut direction = game::random_direction();
 
     let ticks = tick(Duration::from_millis(args.interval));
 
@@ -51,6 +50,7 @@ fn main() {
         s.send(ui::read_input()).unwrap();
     });
 
+    let mut direction = game::random_direction();
     let mut path: Vec<Direction> = Vec::new();
 
     // game loop
@@ -58,7 +58,7 @@ fn main() {
         select! {
             recv(ticks) -> _ => {
                 if !end && !paused{
-                    // calculate the path to the food as a list of directions
+                    // in autopilot mode we calculate the path to the food as a list of directions
                     if args.autopilot {
                         if path.is_empty() {
                             path = path::solve(&grid, *snake.front().unwrap());
@@ -67,7 +67,7 @@ fn main() {
                         direction = path.pop().unwrap_or(direction);
                     }
 
-                    // advance the snake one cell
+                    // advance the snake one step
                     if game::step(&mut grid, &mut snake, direction).is_err() {
                         end = true
                     }
