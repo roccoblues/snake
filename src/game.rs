@@ -70,10 +70,6 @@ fn get_direction(snake: &Snake) -> Direction {
     }
 }
 
-fn remove_tail(snake: &mut Snake) -> (usize, usize) {
-    snake.pop_back().unwrap()
-}
-
 pub type Grid = Vec<Vec<Tile>>;
 
 pub fn create_grid(size: usize) -> Grid {
@@ -138,7 +134,7 @@ pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<
         }
         Tile::Free => {
             grid[x][y] = Tile::Snake;
-            let (tail_x, tail_y) = remove_tail(snake);
+            let (tail_x, tail_y) = snake.pop_back().unwrap();
             grid[tail_x][tail_y] = Tile::Free;
         }
         Tile::Crash => unreachable!(),
