@@ -35,7 +35,7 @@ fn main() {
     let mut steps = 0;
     let mut grid = game::create_grid(args.grid_size);
     let mut snake = game::spawn_snake(&mut grid);
-    let obstacle_count = grid.len() / 2;
+    let obstacle_count = grid.len() * grid.len() / 12;
     game::spawn_obstacles(&mut grid, obstacle_count);
     game::spawn_food(&mut grid);
 
