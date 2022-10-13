@@ -14,7 +14,7 @@ struct PointInfo {
     // The movement cost to move from the starting point to this point on the grid,
     // following the path generated to get there.
     g: usize,
-    // The estimated movement cost to move from that point on the grid to the final destination.
+    // The estimated movement cost to move from this point on the grid to the final destination.
     // We currently use manhatten distance as an approximation heuristic.
     h: usize,
 }
@@ -135,7 +135,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     vec![]
 }
 
-// Finds the food tile in the grid and returns its coodrinates.
+// Finds the food tile in the grid and returns its coordinates.
 fn find_target(grid: &Grid) -> Point {
     for (x, row) in grid.iter().enumerate() {
         for (y, tile) in row.iter().enumerate() {

@@ -32,7 +32,7 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn opposite(&self) -> Direction {
+    fn opposite(&self) -> Direction {
         match self {
             Direction::North => Direction::South,
             Direction::South => Direction::North,
@@ -42,35 +42,24 @@ impl Direction {
     }
 }
 
-pub type Snake = VecDeque<(usize, usize)>;
+pub type Point = (usize, usize);
+pub type Snake = VecDeque<Point>;
+pub type Grid = Vec<Vec<Tile>>;
 
-fn advance_snake(snake: &mut Snake, new_direction: Direction) {
-    // only use new direction if it is doesn't change by 180 degrees
-    let mut direction = get_direction(snake);
-    if new_direction != direction.opposite() {
-        direction = new_direction;
-    }
-
-    let (x, y) = *snake.front().unwrap();
-    let (next_x, next_y) = next_point(x, y, direction);
-    snake.push_front((next_x, next_y));
-}
-
+// Returns the current direction of the snake.
 fn get_direction(snake: &Snake) -> Direction {
-    let (head_x, head_y) = *snake.front().unwrap();
-    let (next_x, next_y) = *snake.get(1).unwrap();
-    if head_x > next_x {
+    let (head_x, head_y) = snake.front().unwrap();
+    let (neck_x, neck_y) = snake.get(1).unwrap();
+    if head_x > neck_x {
         Direction::East
-    } else if head_x < next_x {
+    } else if head_x < neck_x {
         Direction::West
-    } else if head_y > next_y {
+    } else if head_y > neck_y {
         Direction::South
     } else {
         Direction::North
     }
 }
-
-pub type Grid = Vec<Vec<Tile>>;
 
 pub fn create_grid(size: usize) -> Grid {
     assert!(size >= 10, "Minimum grid size is 10!");
@@ -86,7 +75,7 @@ pub fn create_grid(size: usize) -> Grid {
 }
 
 // TODO: document distance parameter
-fn random_empty_point(grid: &Grid, distance: usize) -> (usize, usize) {
+fn random_empty_point(grid: &Grid, distance: usize) -> Point {
     let size = grid.len();
     loop {
         let x = thread_rng().gen_range(distance + 1..size - distance);
@@ -119,21 +108,33 @@ pub fn spawn_obstacles(grid: &mut Grid, count: usize) {
     }
 }
 
-pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<(), SnakeCrash> {
-    advance_snake(snake, direction);
+pub fn step(
+    grid: &mut Grid,
+    snake: &mut Snake,
+    new_direction: Direction,
+) -> Result<(), SnakeCrash> {
+    // Only use new direction if it isn't the opposite of the current direction.
+    let mut direction = get_direction(snake);
+    if new_direction != direction.opposite() {
+        direction = new_direction;
+    }
 
-    let (x, y) = *snake.front().unwrap();
-    match grid[x][y] {
+    // Add the next point in the direction as a new head to the snake.
+    let head = *snake.front().unwrap();
+    let (next_x, next_y) = next(head, direction);
+    snake.push_front((next_x, next_y));
+
+    match grid[next_x][next_y] {
         Tile::Obstacle | Tile::Snake => {
-            grid[x][y] = Tile::Crash;
+            grid[next_x][next_y] = Tile::Crash;
             return Err(SnakeCrash);
         }
         Tile::Food => {
-            grid[x][y] = Tile::Snake;
+            grid[next_x][next_y] = Tile::Snake;
             spawn_food(grid);
         }
         Tile::Free => {
-            grid[x][y] = Tile::Snake;
+            grid[next_x][next_y] = Tile::Snake;
             let (tail_x, tail_y) = snake.pop_back().unwrap();
             grid[tail_x][tail_y] = Tile::Free;
         }
@@ -146,7 +147,9 @@ pub fn random_direction() -> Direction {
     Direction::from_int(thread_rng().gen_range(0..=3) as u8).unwrap()
 }
 
-fn next_point(x: usize, y: usize, direction: Direction) -> (usize, usize) {
+// Returns the next point in the given direction.
+fn next(p: Point, direction: Direction) -> Point {
+    let (x, y) = p;
     match direction {
         Direction::North => (x, y - 1),
         Direction::South => (x, y + 1),
