@@ -1,12 +1,6 @@
-use crate::game::{Direction, Grid, Tile};
+use crate::game::{Direction, Grid, Point, Tile};
 use rand::prelude::*;
 use std::collections::HashMap;
-
-#[derive(Debug, Clone, Copy, PartialEq, Hash, Eq)]
-struct Point {
-    x: usize,
-    y: usize,
-}
 
 #[derive(Default, Debug)]
 struct PointInfo {
@@ -31,12 +25,7 @@ type PointDetails = HashMap<Point, PointInfo>;
 // Calculates a path from the start position to the food on the grid using the A* Search Algorithm.
 // The result is a vector of directions. If no path can be found an empty vector is returned.
 // --> https://www.geeksforgeeks.org/a-search-algorithm/
-pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> {
-    let start = Point {
-        x: start_x,
-        y: start_y,
-    };
-
+pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
     // Find the food on the grid.
     let target = find_target(grid);
 
@@ -64,15 +53,17 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
         // Pop the point with the lowest f value off the open list.
         let i = lowest_f(&open_list, &point_details);
         let p = open_list.swap_remove(i);
+        let (x, y) = p;
 
         // Push it on the closed list.
-        closed_list[p.x][p.y] = true;
+        closed_list[x][y] = true;
 
         // Calculate all valid successors for that point.
-        let successors = generate_successors(&p, grid);
+        let successors = generate_successors(p, grid);
         for next in successors.into_iter() {
+            let (next_x, next_y) = next;
             // If the successor is already on the closed list, ignore it.
-            if closed_list[next.x][next.y] {
+            if closed_list[next_x][next_y] {
                 continue;
             }
 
@@ -85,7 +76,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
                         ..Default::default()
                     },
                 );
-                return generate_path(&next, &point_details);
+                return generate_path(next, &point_details);
             }
 
             // Compute g,h and f for the successor.
@@ -125,10 +116,10 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     // If we reach this point we couldn't find a clear path.
 
     // If we have valid successors we simply pick a random one.
-    let successors = generate_successors(&start, grid);
+    let successors = generate_successors(start, grid);
     if !successors.is_empty() {
         let next = successors[thread_rng().gen_range(0..=successors.len() - 1) as usize];
-        return vec![get_direction(&start, &next)];
+        return vec![get_direction(start, next)];
     }
 
     // No valid successors left, brace for impact!
@@ -140,7 +131,7 @@ fn find_target(grid: &Grid) -> Point {
     for (x, row) in grid.iter().enumerate() {
         for (y, tile) in row.iter().enumerate() {
             if *tile == Tile::Food {
-                return Point { x, y };
+                return (x, y);
             }
         }
     }
@@ -174,42 +165,43 @@ fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
 //           |
 //           S
 // Successors are excluded if they are outside the grid or if the tiles are not Free or Food.
-fn generate_successors(p: &Point, grid: &Grid) -> Vec<Point> {
+fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
+    let (x, y) = p;
     let mut result: Vec<Point> = Vec::with_capacity(4);
 
     // north
-    if p.x > 0 {
-        result.push(Point { x: p.x - 1, ..*p });
+    if x > 0 {
+        result.push((x - 1, y));
     }
     // south
-    if p.x + 1 < grid.len() {
-        result.push(Point { x: p.x + 1, ..*p });
+    if x + 1 < grid.len() {
+        result.push((x + 1, y));
     }
     // east
-    if p.y + 1 < grid.len() {
-        result.push(Point { y: p.y + 1, ..*p });
+    if y + 1 < grid.len() {
+        result.push((x, y + 1));
     }
     // west
-    if p.y > 0 {
-        result.push(Point { y: p.y - 1, ..*p })
+    if y > 0 {
+        result.push((x, y - 1))
     }
 
     result
         .into_iter()
-        .filter(|p| grid[p.x][p.y] == Tile::Free || grid[p.x][p.y] == Tile::Food)
+        .filter(|(x, y)| grid[*x][*y] == Tile::Free || grid[*x][*y] == Tile::Food)
         .collect()
 }
 
 // Generates the path from the starting point to the target as a vector of directions.
 // The entries are in reverse order so that a pop() on the vector returns the next direction.
-fn generate_path(target: &Point, point_details: &PointDetails) -> Vec<Direction> {
+fn generate_path(target: Point, point_details: &PointDetails) -> Vec<Direction> {
     let mut directions: Vec<Direction> = Vec::new();
-    let mut p = target;
+    let mut p = &target;
     loop {
         match point_details.get(p) {
             Some(info) => match &info.parent {
                 Some(parent) => {
-                    let direction = get_direction(parent, p);
+                    let direction = get_direction(*parent, *p);
                     directions.push(direction);
                     p = parent;
                 }
@@ -221,12 +213,14 @@ fn generate_path(target: &Point, point_details: &PointDetails) -> Vec<Direction>
     directions
 }
 
-fn get_direction(from: &Point, to: &Point) -> Direction {
-    if to.x > from.x {
+fn get_direction(from: Point, to: Point) -> Direction {
+    let (from_x, from_y) = from;
+    let (to_x, to_y) = to;
+    if to_x > from_x {
         Direction::East
-    } else if to.x < from.x {
+    } else if to_x < from_x {
         Direction::West
-    } else if to.y > from.y {
+    } else if to_y > from_y {
         Direction::South
     } else {
         Direction::North
@@ -234,7 +228,9 @@ fn get_direction(from: &Point, to: &Point) -> Direction {
 }
 
 fn manhatten_distance(from: Point, to: Point) -> usize {
-    let distance = i32::abs(from.x as i32 - to.x as i32) + i32::abs(from.y as i32 - to.y as i32);
+    let (from_x, from_y) = from;
+    let (to_x, to_y) = to;
+    let distance = i32::abs(from_x as i32 - to_x as i32) + i32::abs(from_y as i32 - to_y as i32);
     distance.try_into().unwrap()
 }
 
