@@ -74,25 +74,21 @@ pub fn create_grid(size: usize) -> Grid {
     grid
 }
 
-// TODO: document distance parameter
-fn random_empty_point(grid: &Grid, distance: usize) -> Point {
-    let size = grid.len();
-    loop {
-        let x = thread_rng().gen_range(distance + 1..size - distance);
-        let y = thread_rng().gen_range(distance + 1..size - distance);
-        if grid[x][y] == Tile::Free {
-            break (x, y);
-        }
-    }
-}
-
 pub fn spawn_snake(grid: &mut Grid) -> Snake {
-    let (x, y) = random_empty_point(grid, 4);
-    grid[x][y] = Tile::Snake;
-    grid[x + 1][y] = Tile::Snake;
     let mut snake = VecDeque::with_capacity(2);
-    snake.push_front((x, y));
-    snake.push_front((x + 1, y));
+
+    // Spawn first snake point.
+    let head = random_empty_point(grid, 4);
+    let (head_x, head_y) = head;
+    grid[head_x][head_y] = Tile::Snake;
+    snake.push_front(head);
+
+    // Spawn a second point in a random direction to ensure the snake is moving.
+    let next = next(head, random_direction());
+    let (next_x, next_y) = next;
+    snake.push_front(next);
+    grid[next_x][next_y] = Tile::Snake;
+
     snake
 }
 
@@ -108,33 +104,31 @@ pub fn spawn_obstacles(grid: &mut Grid, count: usize) {
     }
 }
 
-pub fn step(
-    grid: &mut Grid,
-    snake: &mut Snake,
-    new_direction: Direction,
-) -> Result<(), SnakeCrash> {
+pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<(), SnakeCrash> {
     // Only use new direction if it isn't the opposite of the current direction.
-    let mut direction = get_direction(snake);
-    if new_direction != direction.opposite() {
-        direction = new_direction;
+    let mut d = get_direction(snake);
+    if direction != d.opposite() {
+        d = direction;
     }
 
     // Add the next point in the direction as a new head to the snake.
     let head = *snake.front().unwrap();
-    let (next_x, next_y) = next(head, direction);
-    snake.push_front((next_x, next_y));
+    let next = next(head, d);
+    snake.push_front(next);
 
-    match grid[next_x][next_y] {
+    // Check the new snake head tile.
+    let (x, y) = next;
+    match grid[x][y] {
         Tile::Obstacle | Tile::Snake => {
-            grid[next_x][next_y] = Tile::Crash;
+            grid[x][y] = Tile::Crash;
             return Err(SnakeCrash);
         }
         Tile::Food => {
-            grid[next_x][next_y] = Tile::Snake;
+            grid[x][y] = Tile::Snake;
             spawn_food(grid);
         }
         Tile::Free => {
-            grid[next_x][next_y] = Tile::Snake;
+            grid[x][y] = Tile::Snake;
             let (tail_x, tail_y) = snake.pop_back().unwrap();
             grid[tail_x][tail_y] = Tile::Free;
         }
@@ -145,6 +139,19 @@ pub fn step(
 
 pub fn random_direction() -> Direction {
     Direction::from_int(thread_rng().gen_range(0..=3) as u8).unwrap()
+}
+
+// Returns a random empty point on the grid. The distance parameter specifies
+// the minimum distance from the edge of the grid.
+fn random_empty_point(grid: &Grid, distance: usize) -> Point {
+    let size = grid.len();
+    loop {
+        let x = thread_rng().gen_range(distance + 1..size - distance);
+        let y = thread_rng().gen_range(distance + 1..size - distance);
+        if grid[x][y] == Tile::Free {
+            break (x, y);
+        }
+    }
 }
 
 // Returns the next point in the given direction.

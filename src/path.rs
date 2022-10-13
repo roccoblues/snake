@@ -61,8 +61,8 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
         // Calculate all valid successors for that point.
         let successors = generate_successors(p, grid);
         for next in successors.into_iter() {
-            let (next_x, next_y) = next;
             // If the successor is already on the closed list, ignore it.
+            let (next_x, next_y) = next;
             if closed_list[next_x][next_y] {
                 continue;
             }
@@ -166,8 +166,8 @@ fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
 //           S
 // Successors are excluded if they are outside the grid or if the tiles are not Free or Food.
 fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
-    let (x, y) = p;
     let mut result: Vec<Point> = Vec::with_capacity(4);
+    let (x, y) = p;
 
     // north
     if x > 0 {
