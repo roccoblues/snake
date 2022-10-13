@@ -37,11 +37,13 @@ pub fn reset() -> crossterm::Result<()> {
     Ok(())
 }
 
+// Draws the grid centered in the terminal.
+// The steps and snake length are shown above the grid.
 pub fn draw(grid: &Vec<Vec<Tile>>, steps: u32, snake_length: usize) -> crossterm::Result<()> {
     // We use two characters to represent a tile. So we need to make sure to double
     // the x value when we actually draw the grid.
 
-    // adjust x+y to center grid on screen
+    // Calculate x and y adjustment to center the grid on screen.
     let (rows, cols) = size()?;
     let size = grid.len() as u16;
     let x_adjust = (rows - size * 2) / 2;
@@ -50,7 +52,7 @@ pub fn draw(grid: &Vec<Vec<Tile>>, steps: u32, snake_length: usize) -> crossterm
     assert!(rows > size * 2, "Terminal width isn't enough!");
     assert!(cols > size + 1, "Terminal height isn't enough!");
 
-    // draw grid
+    // Queue drawing of the grid.
     for (x, v) in grid.iter().enumerate() {
         for (y, tile) in v.iter().enumerate() {
             queue!(
@@ -61,7 +63,7 @@ pub fn draw(grid: &Vec<Vec<Tile>>, steps: u32, snake_length: usize) -> crossterm
         }
     }
 
-    // draw steps and snake length
+    // Queue drawing of the steps and snake length.
     let len_str = format!("Snake length: {}", snake_length);
     queue!(
         stdout(),
@@ -74,9 +76,13 @@ pub fn draw(grid: &Vec<Vec<Tile>>, steps: u32, snake_length: usize) -> crossterm
         Print(len_str)
     )?;
 
+    // Do the actual drawing.
     stdout().flush()
 }
 
+// Returns the actual characters to be drawn for the given tile.
+// Obstacle tiles are rendered differently depending on where on the grid they are.
+// That's why we need the position and size of the grid too.
 fn tile_to_symbol(x: usize, y: usize, size: usize, tile: &Tile) -> StyledContent<&str> {
     match tile {
         Tile::Free => "  ".attribute(Attribute::Reset),
@@ -112,6 +118,7 @@ fn tile_to_symbol(x: usize, y: usize, size: usize, tile: &Tile) -> StyledContent
     }
 }
 
+// Waits for an ui event and returns the corresponding Input enum.
 pub fn read_input() -> Input {
     let event = read().unwrap();
     match event {

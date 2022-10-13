@@ -9,7 +9,7 @@ mod game;
 mod path;
 mod ui;
 
-/// Game of snake.
+/// Game of snake
 #[derive(Parser)]
 struct Cli {
     /// Snake advance interval in ms
@@ -44,7 +44,7 @@ fn main() {
     ui::init().unwrap();
     ui::draw(&grid, steps, snake.len()).unwrap();
 
-    // spawn thread to handle ui input
+    // Spawn thread to handle ui input.
     let (s, ui_input) = unbounded();
     thread::spawn(move || loop {
         s.send(ui::read_input()).unwrap();
@@ -53,21 +53,22 @@ fn main() {
     let mut direction = game::random_direction();
     let mut path: Vec<Direction> = Vec::new();
 
-    // game loop
     loop {
         select! {
             recv(ticks) -> _ => {
                 if !end && !paused{
-                    // in autopilot mode we calculate the path to the food as a list of directions
+                    // In autopilot mode calculate the path to the food as a list of directions.
                     if args.autopilot {
                         if path.is_empty() {
                             path = path::solve(&grid, *snake.front().unwrap());
                         }
-                        // if no path can't be found we continue in the current direction
+                        // Pop the next direction from the path.
+                        // If it is empty (no path found), continue in the current
+                        // direction and try again after the next step.
                         direction = path.pop().unwrap_or(direction);
                     }
 
-                    // advance the snake one step
+                    // Advance the snake one step.
                     if game::step(&mut grid, &mut snake, direction).is_err() {
                         end = true
                     }

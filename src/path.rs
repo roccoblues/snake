@@ -11,11 +11,16 @@ struct Point {
 #[derive(Default, Debug)]
 struct PointInfo {
     parent: Option<Point>,
-    g: usize, // the movement cost to move from the starting point to this point on the grid, following the path generated to get there.
-    h: usize, // the estimated movement cost to move from that point on the grid to the final destination
+    // The movement cost to move from the starting point to this point on the grid,
+    // following the path generated to get there.
+    g: usize,
+    // The estimated movement cost to move from that point on the grid to the final destination.
+    // We currently use manhatten distance as an approximation heuristic.
+    h: usize,
 }
 
 impl PointInfo {
+    // The search algorith picks the next point having the lowest 'f' and proceeds with that.
     fn f(&self) -> usize {
         self.g + self.h
     }
@@ -23,24 +28,27 @@ impl PointInfo {
 
 type PointDetails = HashMap<Point, PointInfo>;
 
-// Calculates a path as a vector of directions using the A* Search Algorithm.
-// https://www.geeksforgeeks.org/a-search-algorithm/
+// Calculates a path from the start position to the food on the grid using the A* Search Algorithm.
+// The result is a vector of directions. If no path can be found an empty vector is returned.
+// --> https://www.geeksforgeeks.org/a-search-algorithm/
 pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> {
     let start = Point {
         x: start_x,
         y: start_y,
     };
 
+    // Find the food on the grid.
     let target = find_target(grid);
 
     // Use a hashmap to hold the details of a point.
     let mut point_details = HashMap::new();
 
-    // Create open list.
+    // Create the open list to hold potential points of the path.
     let mut open_list: Vec<Point> = Vec::with_capacity(grid.len() * grid.len());
 
-    // Create closed list and initialise it to false which means that no point
-    // has been included yet. This closed list is implemented as a boolean 2D array.
+    // Create a closed list to hold already checked points and initialize it to false
+    // which means that no point has been included yet.
+    // This closed list is implemented as a boolean 2D array.
     let mut closed_list = vec![vec![false; grid.len()]; grid.len()];
 
     // Put the starting point on the open list.
@@ -53,21 +61,22 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
     );
 
     while !open_list.is_empty() {
-        // Pop the point with the lowest f on the open list.
+        // Pop the point with the lowest f value off the open list.
         let i = lowest_f(&open_list, &point_details);
         let p = open_list.swap_remove(i);
 
         // Push it on the closed list.
         closed_list[p.x][p.y] = true;
 
+        // Calculate all valid successors for that point.
         let successors = generate_successors(&p, grid);
         for next in successors.into_iter() {
-            // If the successor is already on the closed list we ignore it.
+            // If the successor is already on the closed list, ignore it.
             if closed_list[next.x][next.y] {
                 continue;
             }
 
-            // If successor is the target, stop search and generate path.
+            // If successor is the target, stop and generate the path.
             if next == target {
                 point_details.insert(
                     next,
@@ -79,7 +88,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
                 return generate_path(&next, &point_details);
             }
 
-            // Compute g,h and f for successor.
+            // Compute g,h and f for the successor.
             let info = point_details.get(&p).unwrap();
             let g = info.g + 1;
             let h = manhatten_distance(next, target);
@@ -88,11 +97,11 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
             match point_details.get_mut(&next) {
                 // If a point with the same position as successor is in the open list.
                 Some(next_info) => {
-                    // Ghich has a lower f than successor, skip this successor.
+                    // And it has a lower f value than the successor, skip this successor.
                     if next_info.f() < f {
                         continue;
                     }
-                    // Otherwise, update the details of this point.
+                    // Otherwise, update the details of this point with the values of the successor.
                     next_info.g = g;
                     next_info.h = h;
                     next_info.parent = Some(p);
@@ -113,7 +122,7 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
         }
     }
 
-    // We didn't find a clear path.
+    // If we reach this point we couldn't find a clear path.
 
     // If we have valid successors we simply pick a random one.
     let successors = generate_successors(&start, grid);
@@ -122,10 +131,11 @@ pub fn solve(grid: &Grid, (start_x, start_y): (usize, usize)) -> Vec<Direction> 
         return vec![get_direction(&start, &next)];
     }
 
-    // Brace for impact!
+    // No valid successors left, brace for impact!
     vec![]
 }
 
+// Finds the food tile in the grid and returns its coodrinates.
 fn find_target(grid: &Grid) -> Point {
     for (x, row) in grid.iter().enumerate() {
         for (y, tile) in row.iter().enumerate() {
@@ -137,6 +147,7 @@ fn find_target(grid: &Grid) -> Point {
     unreachable!("No food found in grid!")
 }
 
+// Finds the point with the lowest f value in the list and returns it position in the list.
 fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
     assert!(!list.is_empty());
 
@@ -156,12 +167,13 @@ fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
     i
 }
 
-// Generate all valid successors of a point.
+// Generates all valid successors of a point.
 //           N
 //           |
 //      W--Point--E
 //           |
 //           S
+// Successors are excluded if they are outside the grid or if the tiles are not Free or Food.
 fn generate_successors(p: &Point, grid: &Grid) -> Vec<Point> {
     let mut result: Vec<Point> = Vec::with_capacity(4);
 
@@ -188,9 +200,11 @@ fn generate_successors(p: &Point, grid: &Grid) -> Vec<Point> {
         .collect()
 }
 
-fn generate_path(start: &Point, point_details: &PointDetails) -> Vec<Direction> {
+// Generates the path from the starting point to the target as a vector of directions.
+// The entries are in reverse order so that a pop() on the vector returns the next direction.
+fn generate_path(target: &Point, point_details: &PointDetails) -> Vec<Direction> {
     let mut directions: Vec<Direction> = Vec::new();
-    let mut p = start;
+    let mut p = target;
     loop {
         match point_details.get(p) {
             Some(info) => match &info.parent {
