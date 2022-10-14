@@ -46,3 +46,4 @@ Options:
 - [ ] add tests :D
 - [ ] increase or decrease the speed with + and - in autopilot
 - [ ] arcade mode where the game increases the speed every time you eat
+- [ ] high-resolution mode (braille symbols)
