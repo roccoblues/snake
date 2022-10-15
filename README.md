@@ -19,8 +19,8 @@ Options:
   -i, --interval <INTERVAL>    Snake advance interval in ms [default: 150]
   -g, --grid-size <GRID_SIZE>  Width and height of the grid [default: 20]
       --no-obstacles           Don't draw obstacles on the grid
-      --autopilot              Autopilot mode - the computer controls the snake
-      --arcade                 Arcade mode - the snake gets faster with every food eaten
+      --autopilot              The computer controls the snake
+      --arcade                 The snake gets faster with every food eaten
 ```
 
 ### Keybindings

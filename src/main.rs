@@ -26,11 +26,11 @@ struct Cli {
     #[arg(long, default_value_t = false)]
     no_obstacles: bool,
 
-    /// Autopilot mode - the computer controls the snake
+    /// The computer controls the snake
     #[arg(long, default_value_t = false)]
     autopilot: bool,
 
-    /// Arcade mode - the snake gets faster with every food eaten
+    /// The snake gets faster with every food eaten
     #[arg(long, default_value_t = false)]
     arcade: bool,
 }
