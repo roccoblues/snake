@@ -104,8 +104,9 @@ pub fn spawn_obstacles(grid: &mut Grid, count: usize) {
     }
 }
 
-pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<(), SnakeCrash> {
-    // Only use new direction if it isn't the opposite of the current direction.
+pub fn grow_snake(snake: &mut Snake, direction: Direction) {
+    // The snake can't reverse direction. So if the new direction is the opposite
+    // of the current one we discard it.
     let mut d = get_direction(snake);
     if direction != d.opposite() {
         d = direction;
@@ -115,7 +116,9 @@ pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<
     let head = *snake.front().unwrap();
     let next = next(head, d);
     snake.push_front(next);
+}
 
+pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<(), SnakeCrash> {
     // Check the new snake head tile.
     let (x, y) = next;
     match grid[x][y] {

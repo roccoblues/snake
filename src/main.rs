@@ -1,6 +1,8 @@
-use clap::Parser;
-use crossbeam_channel::{select, tick, unbounded};
+use clap::{Parser, ValueEnum};
 use game::Direction;
+use std::sync::atomic;
+use std::sync::mpsc::channel;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use ui::Input;
@@ -8,6 +10,16 @@ use ui::Input;
 mod game;
 mod path;
 mod ui;
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Mode {
+    /// You control the snake
+    Normal,
+    /// You control the snake and it gets faster with every food eaten
+    Arcade,
+    /// The computer controls the snake
+    Autopilot,
+}
 
 /// Game of snake
 #[derive(Parser)]
@@ -20,9 +32,9 @@ struct Cli {
     #[arg(short, long, default_value_t = 20)]
     grid_size: usize,
 
-    /// Autopilot mode
-    #[arg(short, long, default_value_t = false)]
-    autopilot: bool,
+    /// Mode
+    #[arg(value_enum, default_value_t = Mode::Normal)]
+    mode: Mode,
 }
 
 fn main() {
@@ -37,29 +49,44 @@ fn main() {
 
     let mut grid = game::create_grid(args.grid_size);
     let mut snake = game::spawn_snake(&mut grid);
-    game::spawn_obstacles(&mut grid, obstacle_count);
+    // game::spawn_obstacles(&mut grid, obstacle_count);
     game::spawn_food(&mut grid);
-
-    let ticks = tick(Duration::from_millis(args.interval));
 
     ui::init().unwrap();
     ui::draw(&grid, steps, snake.len()).unwrap();
 
+    let (tx, rx) = channel();
+
     // Spawn thread to handle ui input.
-    let (s, ui_input) = unbounded();
+    let ui_tx = tx.clone();
     thread::spawn(move || loop {
-        s.send(ui::read_input()).unwrap();
+        ui_tx.send(ui::read_input()).unwrap();
+    });
+
+    // Spawn thread to send ticks.
+    let interval = Arc::new(atomic::AtomicU64::new(args.interval));
+    let int_clone = Arc::clone(&interval);
+    let tick_tx = tx.clone();
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_millis(
+            int_clone.load(atomic::Ordering::Relaxed),
+        ));
+        tick_tx.send(Input::Step).unwrap();
     });
 
     let mut direction = game::random_direction();
     let mut path: Vec<Direction> = Vec::new();
 
     loop {
-        select! {
-            recv(ticks) -> _ => {
-                if !end && !paused{
+        match rx.recv().unwrap() {
+            Input::Unknown => {}
+            Input::Exit => break,
+            Input::ChangeDirection(d) => direction = d,
+            Input::Pause => paused ^= true,
+            Input::Step => {
+                if !end && !paused {
                     // In autopilot mode calculate the path to the food as a list of directions.
-                    if args.autopilot {
+                    if args.mode == Mode::Autopilot {
                         if path.is_empty() {
                             path = path::solve(&grid, *snake.front().unwrap());
                         }
@@ -73,19 +100,13 @@ fn main() {
                     if game::step(&mut grid, &mut snake, direction).is_err() {
                         end = true
                     }
-                    steps +=1;
+                    steps += 1;
                     ui::draw(&grid, steps, snake.len()).unwrap();
-                }
-            }
-            recv(ui_input) -> msg => {
-                match msg.unwrap() {
-                    Input::Exit => break,
-                    Input::North => direction = Direction::North,
-                    Input::South => direction = Direction::South,
-                    Input::East => direction = Direction::East,
-                    Input::West => direction = Direction::West,
-                    Input::Pause => paused ^= true,
-                    Input::Unknown => {},
+
+                    if args.mode == Mode::Arcade {
+                        let i = interval.load(atomic::Ordering::Relaxed);
+                        interval.store(i - 40, atomic::Ordering::Relaxed);
+                    }
                 }
             }
         }

@@ -1,4 +1,4 @@
-use crate::game::Tile;
+use crate::game::{Direction, Tile};
 use crossterm::event::{read, Event, KeyCode};
 use crossterm::style::{Attribute, Print, StyledContent, Stylize};
 use crossterm::terminal::{
@@ -11,12 +11,10 @@ use std::io::{stdout, Write};
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Input {
-    North,
-    South,
-    East,
-    West,
     Pause,
     Exit,
+    Step,
+    ChangeDirection(Direction),
     Unknown,
 }
 
