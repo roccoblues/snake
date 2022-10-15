@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use game::Direction;
+use game::{Direction, Tile};
 use std::sync::atomic;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
@@ -49,7 +49,7 @@ fn main() {
 
     let mut grid = game::create_grid(args.grid_size);
     let mut snake = game::spawn_snake(&mut grid);
-    // game::spawn_obstacles(&mut grid, obstacle_count);
+    game::spawn_obstacles(&mut grid, obstacle_count);
     game::spawn_food(&mut grid);
 
     ui::init().unwrap();
@@ -96,17 +96,40 @@ fn main() {
                         direction = path.pop().unwrap_or(direction);
                     }
 
-                    // Advance the snake one step.
-                    if game::step(&mut grid, &mut snake, direction).is_err() {
-                        end = true
+                    // Grow the snake in the given direction.
+                    let head = game::grow_snake(&mut snake, direction);
+
+                    // Mark the new snake head tile in the grid.
+                    let (x, y) = head;
+                    match grid[x][y] {
+                        // The snake crashed - end the game.
+                        Tile::Obstacle | Tile::Snake => {
+                            grid[x][y] = Tile::Crash;
+                            end = true;
+                        }
+                        // The snake ate - spawn new food.
+                        Tile::Food => {
+                            grid[x][y] = Tile::Snake;
+                            game::spawn_food(&mut grid);
+                            // In arcade mode we decrease the tick interval to make the game
+                            // faster with every food eaten.
+                            if args.mode == Mode::Arcade {
+                                let i = interval.load(atomic::Ordering::Relaxed);
+                                interval.store(i - 5, atomic::Ordering::Relaxed);
+                            }
+                        }
+                        // If the new head tile is free we pop the tail of the snake
+                        // to make it look like it is moving.
+                        Tile::Free => {
+                            grid[x][y] = Tile::Snake;
+                            let (tail_x, tail_y) = snake.pop_back().unwrap();
+                            grid[tail_x][tail_y] = Tile::Free;
+                        }
+                        Tile::Crash => unreachable!(),
                     }
+
                     steps += 1;
                     ui::draw(&grid, steps, snake.len()).unwrap();
-
-                    if args.mode == Mode::Arcade {
-                        let i = interval.load(atomic::Ordering::Relaxed);
-                        interval.store(i - 40, atomic::Ordering::Relaxed);
-                    }
                 }
             }
         }

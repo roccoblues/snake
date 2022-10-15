@@ -122,10 +122,10 @@ pub fn read_input() -> Input {
     match event {
         Event::Key(key_event) => match key_event.code {
             KeyCode::Esc | KeyCode::Char('q') => Input::Exit,
-            KeyCode::Up => Input::North,
-            KeyCode::Down => Input::South,
-            KeyCode::Right => Input::East,
-            KeyCode::Left => Input::West,
+            KeyCode::Up => Input::ChangeDirection(Direction::North),
+            KeyCode::Down => Input::ChangeDirection(Direction::South),
+            KeyCode::Right => Input::ChangeDirection(Direction::East),
+            KeyCode::Left => Input::ChangeDirection(Direction::West),
             KeyCode::Char(' ') => Input::Pause,
             _ => Input::Unknown,
         },

@@ -2,7 +2,7 @@
 
 A terminal based snake game with autopilot.
 
-[![asciicast](https://asciinema.org/a/527684.svg)](https://asciinema.org/a/527684?t=5)
+[![asciicast](https://asciinema.org/a/528559.svg)](https://asciinema.org/a/528559?t=2)
 
 ## Rationale
 
@@ -13,14 +13,29 @@ I was looking for a small project to start learning Rust when I stumbled upon [s
 ```
 Game of snake
 
-Usage: snake [OPTIONS]
+Usage: snake [OPTIONS] [MODE]
+
+Arguments:
+  [MODE]
+          Mode
+
+          [default: normal]
+
+          Possible values:
+          - normal:    You control the snake
+          - arcade:    You control the snake and it gets faster with every food eaten
+          - autopilot: The computer controls the snake
 
 Options:
-  -i, --interval <INTERVAL>    Snake advance interval in ms [default: 150]
-  -g, --grid-size <GRID_SIZE>  Width and height of the grid [default: 20]
-  -a, --autopilot              Autopilot mode
-  -h, --help                   Print help information
-~
+  -i, --interval <INTERVAL>
+          Snake advance interval in ms
+
+          [default: 150]
+
+  -g, --grid-size <GRID_SIZE>
+          Width and height of the grid
+
+          [default: 20]
 ```
 
 ### Keybindings
@@ -45,5 +60,5 @@ Options:
 - [ ] document code
 - [ ] add tests :D
 - [ ] increase or decrease the speed with + and - in autopilot
-- [ ] arcade mode where the game increases the speed every time you eat
 - [ ] high-resolution mode (braille symbols)
+- [x] arcade mode where the game increases the speed every time the snake eats

@@ -3,15 +3,6 @@ use rand::prelude::*;
 use std::collections::VecDeque;
 use std::fmt;
 
-#[derive(Debug)]
-pub struct SnakeCrash;
-
-impl fmt::Display for SnakeCrash {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Snake crashed!")
-    }
-}
-
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Tile {
@@ -104,7 +95,7 @@ pub fn spawn_obstacles(grid: &mut Grid, count: usize) {
     }
 }
 
-pub fn grow_snake(snake: &mut Snake, direction: Direction) {
+pub fn grow_snake(snake: &mut Snake, direction: Direction) -> Point {
     // The snake can't reverse direction. So if the new direction is the opposite
     // of the current one we discard it.
     let mut d = get_direction(snake);
@@ -116,28 +107,7 @@ pub fn grow_snake(snake: &mut Snake, direction: Direction) {
     let head = *snake.front().unwrap();
     let next = next(head, d);
     snake.push_front(next);
-}
-
-pub fn step(grid: &mut Grid, snake: &mut Snake, direction: Direction) -> Result<(), SnakeCrash> {
-    // Check the new snake head tile.
-    let (x, y) = next;
-    match grid[x][y] {
-        Tile::Obstacle | Tile::Snake => {
-            grid[x][y] = Tile::Crash;
-            return Err(SnakeCrash);
-        }
-        Tile::Food => {
-            grid[x][y] = Tile::Snake;
-            spawn_food(grid);
-        }
-        Tile::Free => {
-            grid[x][y] = Tile::Snake;
-            let (tail_x, tail_y) = snake.pop_back().unwrap();
-            grid[tail_x][tail_y] = Tile::Free;
-        }
-        Tile::Crash => unreachable!(),
-    }
-    Ok(())
+    next
 }
 
 pub fn random_direction() -> Direction {
