@@ -1,7 +1,6 @@
 use int_enum::IntEnum;
 use rand::prelude::*;
 use std::collections::VecDeque;
-use std::fmt;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

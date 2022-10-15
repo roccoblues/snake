@@ -13,29 +13,14 @@ I was looking for a small project to start learning Rust when I stumbled upon [s
 ```
 Game of snake
 
-Usage: snake [OPTIONS] [MODE]
-
-Arguments:
-  [MODE]
-          Mode
-
-          [default: normal]
-
-          Possible values:
-          - normal:    You control the snake
-          - arcade:    You control the snake and it gets faster with every food eaten
-          - autopilot: The computer controls the snake
+Usage: snake [OPTIONS]
 
 Options:
-  -i, --interval <INTERVAL>
-          Snake advance interval in ms
-
-          [default: 150]
-
-  -g, --grid-size <GRID_SIZE>
-          Width and height of the grid
-
-          [default: 20]
+  -i, --interval <INTERVAL>    Snake advance interval in ms [default: 150]
+  -g, --grid-size <GRID_SIZE>  Width and height of the grid [default: 20]
+      --no-obstacles           Don't draw obstacles on the grid
+      --autopilot              Autopilot mode - the computer controls the snake
+      --arcade                 Arcade mode - the snake gets faster with every food eaten
 ```
 
 ### Keybindings

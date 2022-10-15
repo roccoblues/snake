@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use game::{Direction, Tile};
 use std::sync::atomic;
 use std::sync::mpsc::channel;
@@ -11,16 +11,6 @@ mod game;
 mod path;
 mod ui;
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-enum Mode {
-    /// You control the snake
-    Normal,
-    /// You control the snake and it gets faster with every food eaten
-    Arcade,
-    /// The computer controls the snake
-    Autopilot,
-}
-
 /// Game of snake
 #[derive(Parser)]
 struct Cli {
@@ -32,9 +22,17 @@ struct Cli {
     #[arg(short, long, default_value_t = 20)]
     grid_size: usize,
 
-    /// Mode
-    #[arg(value_enum, default_value_t = Mode::Normal)]
-    mode: Mode,
+    /// Don't draw obstacles on the grid
+    #[arg(long, default_value_t = false)]
+    no_obstacles: bool,
+
+    /// Autopilot mode - the computer controls the snake
+    #[arg(long, default_value_t = false)]
+    autopilot: bool,
+
+    /// Arcade mode - the snake gets faster with every food eaten
+    #[arg(long, default_value_t = false)]
+    arcade: bool,
 }
 
 fn main() {
@@ -45,12 +43,14 @@ fn main() {
     let mut end = false;
     let mut paused = false;
     let mut steps = 0;
-    let obstacle_count = args.grid_size * args.grid_size / 20;
+    let obstacle_count = args.grid_size * args.grid_size / 25;
 
     let mut grid = game::create_grid(args.grid_size);
     let mut snake = game::spawn_snake(&mut grid);
-    game::spawn_obstacles(&mut grid, obstacle_count);
     game::spawn_food(&mut grid);
+    if !args.no_obstacles {
+        game::spawn_obstacles(&mut grid, obstacle_count);
+    }
 
     ui::init().unwrap();
     ui::draw(&grid, steps, snake.len()).unwrap();
@@ -86,7 +86,7 @@ fn main() {
             Input::Step => {
                 if !end && !paused {
                     // In autopilot mode calculate the path to the food as a list of directions.
-                    if args.mode == Mode::Autopilot {
+                    if args.autopilot {
                         if path.is_empty() {
                             path = path::solve(&grid, *snake.front().unwrap());
                         }
@@ -111,11 +111,13 @@ fn main() {
                         Tile::Food => {
                             grid[x][y] = Tile::Snake;
                             game::spawn_food(&mut grid);
-                            // In arcade mode we decrease the tick interval to make the game
-                            // faster with every food eaten.
-                            if args.mode == Mode::Arcade {
+                            // In arcade mode we decrease the tick interval with every food eaten
+                            // to make the game faster.
+                            if args.arcade {
                                 let i = interval.load(atomic::Ordering::Relaxed);
-                                interval.store(i - 5, atomic::Ordering::Relaxed);
+                                if i > 45 {
+                                    interval.store(i - 5, atomic::Ordering::Relaxed);
+                                }
                             }
                         }
                         // If the new head tile is free we pop the tail of the snake
