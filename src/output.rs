@@ -50,12 +50,19 @@ impl Screen {
         }
     }
 
-    pub fn draw_score(&self, steps: u32, snake_length: usize) {
-        let len_str = format!("Snake length: {}", snake_length);
+    pub fn draw_steps(&self, steps: u32) {
         execute!(
             stdout(),
             cursor::MoveTo(self.x_adjust, self.y_adjust - 1),
             Print(format!("Steps: {}", steps)),
+        )
+        .unwrap();
+    }
+
+    pub fn draw_length(&self, length: usize) {
+        let len_str = format!("Snake length: {}", length);
+        execute!(
+            stdout(),
             cursor::MoveTo(
                 self.x_adjust + self.grid_width * 2 - len_str.chars().count() as u16 - 1,
                 self.y_adjust - 1

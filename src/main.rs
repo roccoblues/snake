@@ -66,7 +66,8 @@ fn main() {
     }
 
     screen.draw_grid(&grid);
-    screen.draw_score(steps, snake.len());
+    screen.draw_steps(steps);
+    screen.draw_length(snake.len());
 
     let (tx, rx) = channel();
 
@@ -137,6 +138,7 @@ fn main() {
                             screen.draw(x as u16, y as u16, Tile::Snake);
                             let (food_x, food_y) = game::spawn_food(&mut grid);
                             screen.draw(food_x as u16, food_y as u16, Tile::Food);
+                            screen.draw_length(snake.len());
                             // In arcade mode we decrease the tick interval with every food eaten
                             // to make the game faster.
                             if args.arcade {
@@ -156,7 +158,7 @@ fn main() {
                     }
 
                     steps += 1;
-                    screen.draw_score(steps, snake.len());
+                    screen.draw_steps(steps);
                 }
             }
         }
