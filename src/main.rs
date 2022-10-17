@@ -125,16 +125,16 @@ fn main() {
 
                     // Mark the new snake head tile in the grid.
                     let (x, y) = head;
-                    match grid[x][y] {
+                    match grid.tile(head) {
                         // The snake crashed - end the game.
                         Tile::Obstacle | Tile::Snake => {
-                            grid[x][y] = Tile::Crash;
+                            grid.set_tile(head, Tile::Crash);
                             screen.draw(x as u16, y as u16, Tile::Crash);
                             end = true;
                         }
                         // The snake ate - spawn new food.
                         Tile::Food => {
-                            grid[x][y] = Tile::Snake;
+                            grid.set_tile(head, Tile::Snake);
                             screen.draw(x as u16, y as u16, Tile::Snake);
                             let (food_x, food_y) = game::spawn_food(&mut grid);
                             screen.draw(food_x as u16, food_y as u16, Tile::Food);
@@ -148,10 +148,11 @@ fn main() {
                         // If the new head tile is free we pop the tail of the snake
                         // to make it look like it is moving.
                         Tile::Free => {
-                            grid[x][y] = Tile::Snake;
+                            grid.set_tile(head, Tile::Snake);
                             screen.draw(x as u16, y as u16, Tile::Snake);
-                            let (tail_x, tail_y) = snake.pop_back().unwrap();
-                            grid[tail_x][tail_y] = Tile::Free;
+                            let tail = snake.pop_back().unwrap();
+                            let (tail_x, tail_y) = tail;
+                            grid.set_tile(tail, Tile::Free);
                             screen.draw(tail_x as u16, tail_y as u16, Tile::Free);
                         }
                         Tile::Crash => unreachable!(),

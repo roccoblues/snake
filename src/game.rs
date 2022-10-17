@@ -34,7 +34,30 @@ impl Direction {
 
 pub type Point = (usize, usize);
 pub type Snake = VecDeque<Point>;
-pub type Grid = Vec<Vec<Tile>>;
+
+pub struct Grid {
+    pub tiles: Vec<Vec<Tile>>,
+}
+
+impl Grid {
+    pub fn tile(&self, p: Point) -> Tile {
+        let (x, y) = p;
+        self.tiles[x][y]
+    }
+
+    pub fn set_tile(&mut self, p: Point, tile: Tile) {
+        let (x, y) = p;
+        self.tiles[x][y] = tile
+    }
+
+    pub fn width(&self) -> usize {
+        self.tiles.len()
+    }
+
+    pub fn height(&self) -> usize {
+        self.tiles[0].len()
+    }
+}
 
 // Returns the current direction of the snake.
 fn get_direction(snake: &Snake) -> Direction {
@@ -54,15 +77,15 @@ fn get_direction(snake: &Snake) -> Direction {
 pub fn create_grid(width: u16, height: u16) -> Grid {
     assert!(width >= 12, "Minimum grid size is 12!");
     assert!(height >= 9, "Minimum grid size is 9!");
-    let mut grid = vec![vec![Tile::Free; height.into()]; width.into()];
+    let mut tiles = vec![vec![Tile::Free; height.into()]; width.into()];
     for x in 0..=width - 1 {
         for y in 0..=height - 1 {
             if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
-                grid[x as usize][y as usize] = Tile::Obstacle;
+                tiles[x as usize][y as usize] = Tile::Obstacle;
             };
         }
     }
-    grid
+    Grid { tiles }
 }
 
 pub fn spawn_snake(grid: &mut Grid) -> Snake {
@@ -70,29 +93,27 @@ pub fn spawn_snake(grid: &mut Grid) -> Snake {
 
     // Spawn first snake point.
     let head = random_empty_point(grid, 4);
-    let (head_x, head_y) = head;
-    grid[head_x][head_y] = Tile::Snake;
+    grid.set_tile(head, Tile::Snake);
     snake.push_front(head);
 
     // Spawn a second point in a random direction to ensure the snake is moving.
     let next = next(head, random_direction());
-    let (next_x, next_y) = next;
+    grid.set_tile(next, Tile::Snake);
     snake.push_front(next);
-    grid[next_x][next_y] = Tile::Snake;
 
     snake
 }
 
 pub fn spawn_food(grid: &mut Grid) -> Point {
-    let (x, y) = random_empty_point(grid, 1);
-    grid[x][y] = Tile::Food;
-    (x, y)
+    let p = random_empty_point(grid, 1);
+    grid.set_tile(p, Tile::Food);
+    p
 }
 
 pub fn spawn_obstacles(grid: &mut Grid, count: u16) {
     for _ in 0..=count {
-        let (x, y) = random_empty_point(grid, 0);
-        grid[x][y] = Tile::Obstacle;
+        let p = random_empty_point(grid, 0);
+        grid.set_tile(p, Tile::Obstacle);
     }
 }
 
@@ -119,10 +140,11 @@ pub fn random_direction() -> Direction {
 // the minimum distance from the edge of the grid.
 fn random_empty_point(grid: &Grid, distance: usize) -> Point {
     loop {
-        let x = thread_rng().gen_range(distance + 1..grid_width(grid) - distance);
-        let y = thread_rng().gen_range(distance + 1..grid_height(grid) - distance);
-        if grid[x][y] == Tile::Free {
-            break (x, y);
+        let x = thread_rng().gen_range(distance + 1..grid.width() - distance);
+        let y = thread_rng().gen_range(distance + 1..grid.height() - distance);
+        let p = (x, y);
+        if grid.tile(p) == Tile::Free {
+            break p;
         }
     }
 }
@@ -136,12 +158,4 @@ fn next(p: Point, direction: Direction) -> Point {
         Direction::West => (x - 1, y),
         Direction::East => (x + 1, y),
     }
-}
-
-pub fn grid_width(grid: &Grid) -> usize {
-    grid.len()
-}
-
-pub fn grid_height(grid: &Grid) -> usize {
-    grid[0].len()
 }

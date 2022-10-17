@@ -1,4 +1,4 @@
-use crate::game::{grid_height, grid_width, Direction, Grid, Point, Tile};
+use crate::game::{Direction, Grid, Point, Tile};
 use rand::prelude::*;
 use std::collections::HashMap;
 
@@ -33,12 +33,12 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
     let mut point_details = HashMap::new();
 
     // Create the open list to hold potential points of the path.
-    let mut open_list: Vec<Point> = Vec::with_capacity(grid_width(grid) * grid_height(grid));
+    let mut open_list: Vec<Point> = Vec::with_capacity(grid.width() * grid.height());
 
     // Create a closed list to hold already checked points and initialize it to false
     // which means that no point has been included yet.
     // This closed list is implemented as a boolean 2D array.
-    let mut closed_list = vec![vec![false; grid_height(grid)]; grid_width(grid)];
+    let mut closed_list = vec![vec![false; grid.height()]; grid.width()];
 
     // Put the starting point on the open list.
     open_list.push(start);
@@ -128,10 +128,11 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
 
 // Finds the food tile in the grid and returns its coordinates.
 fn find_target(grid: &Grid) -> Point {
-    for (x, row) in grid.iter().enumerate() {
-        for (y, tile) in row.iter().enumerate() {
-            if *tile == Tile::Food {
-                return (x, y);
+    for x in 0..grid.width() - 1 {
+        for y in 0..grid.height() - 1 {
+            let p = (x, y);
+            if grid.tile(p) == Tile::Food {
+                return p;
             }
         }
     }
@@ -174,11 +175,11 @@ fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
         result.push((x - 1, y));
     }
     // south
-    if x + 1 < grid_width(grid) {
+    if x + 1 < grid.width() {
         result.push((x + 1, y));
     }
     // east
-    if y + 1 < grid_height(grid) {
+    if y + 1 < grid.height() {
         result.push((x, y + 1));
     }
     // west
@@ -188,7 +189,7 @@ fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
 
     result
         .into_iter()
-        .filter(|(x, y)| grid[*x][*y] == Tile::Free || grid[*x][*y] == Tile::Food)
+        .filter(|p| grid.tile(*p) == Tile::Free || grid.tile(*p) == Tile::Food)
         .collect()
 }
 
@@ -240,15 +241,19 @@ mod tests {
 
     #[test]
     fn solve_path_simple() {
-        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
-        grid[2][0] = Tile::Food;
+        let mut grid = Grid {
+            tiles: vec![vec![Tile::Free; 3]; 3],
+        };
+        grid.set_tile((2, 0), Tile::Food);
         assert_eq!(solve(&grid, (0, 0)), vec![Direction::East, Direction::East])
     }
 
     #[test]
     fn solve_path_diagonal() {
-        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
-        grid[2][2] = Tile::Food;
+        let mut grid = Grid {
+            tiles: vec![vec![Tile::Free; 3]; 3],
+        };
+        grid.set_tile((2, 2), Tile::Food);
         assert_eq!(
             solve(&grid, (0, 0)),
             vec![
@@ -262,10 +267,12 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle() {
-        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
-        grid[1][0] = Tile::Obstacle;
-        grid[1][1] = Tile::Obstacle;
-        grid[2][0] = Tile::Food;
+        let mut grid = Grid {
+            tiles: vec![vec![Tile::Free; 3]; 3],
+        };
+        grid.set_tile((1, 0), Tile::Obstacle);
+        grid.set_tile((1, 1), Tile::Obstacle);
+        grid.set_tile((2, 0), Tile::Food);
         assert_eq!(
             solve(&grid, (0, 0)),
             vec![
@@ -281,10 +288,12 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle_reverse() {
-        let mut grid: Vec<Vec<Tile>> = vec![vec![Tile::Free; 3]; 3];
-        grid[1][1] = Tile::Obstacle;
-        grid[1][2] = Tile::Obstacle;
-        grid[0][2] = Tile::Food;
+        let mut grid = Grid {
+            tiles: vec![vec![Tile::Free; 3]; 3],
+        };
+        grid.set_tile((1, 1), Tile::Obstacle);
+        grid.set_tile((1, 2), Tile::Obstacle);
+        grid.set_tile((0, 2), Tile::Food);
         assert_eq!(
             solve(&grid, (2, 2)),
             vec![

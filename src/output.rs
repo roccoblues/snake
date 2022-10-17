@@ -43,9 +43,9 @@ impl Screen {
     }
 
     pub fn draw_grid(&self, grid: &Grid) {
-        for (x, v) in grid.iter().enumerate() {
-            for (y, tile) in v.iter().enumerate() {
-                self.draw(x as u16, y as u16, *tile)
+        for x in 0..grid.width() {
+            for y in 0..grid.height() {
+                self.draw(x as u16, y as u16, grid.tile((x, y)))
             }
         }
     }
