@@ -51,13 +51,13 @@ fn get_direction(snake: &Snake) -> Direction {
     }
 }
 
-pub fn create_grid(size: usize) -> Grid {
+pub fn create_grid(size: u16) -> Grid {
     assert!(size >= 10, "Minimum grid size is 10!");
-    let mut grid = vec![vec![Tile::Free; size]; size];
+    let mut grid = vec![vec![Tile::Free; size.into()]; size.into()];
     for x in 0..=size - 1 {
         for y in 0..=size - 1 {
             if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
-                grid[x][y] = Tile::Obstacle;
+                grid[x as usize][y as usize] = Tile::Obstacle;
             };
         }
     }
@@ -87,7 +87,7 @@ pub fn spawn_food(grid: &mut Grid) {
     grid[x][y] = Tile::Food;
 }
 
-pub fn spawn_obstacles(grid: &mut Grid, count: usize) {
+pub fn spawn_obstacles(grid: &mut Grid, count: u16) {
     for _ in 0..=count {
         let (x, y) = random_empty_point(grid, 0);
         grid[x][y] = Tile::Obstacle;

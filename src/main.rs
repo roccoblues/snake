@@ -1,26 +1,28 @@
 use clap::Parser;
 use game::{Direction, Tile};
-use std::sync::atomic::{self, AtomicU64};
+use input::Input;
+use output::UI;
+use std::sync::atomic::{self, AtomicU16};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use ui::Input;
 
 mod game;
+mod input;
+mod output;
 mod path;
-mod ui;
 
 /// Game of snake
 #[derive(Parser)]
 struct Cli {
     /// Snake advance interval in ms
     #[arg(short, long, default_value_t = 150)]
-    interval: u64,
+    interval: u16,
 
     /// Width and height of the grid
     #[arg(short, long, default_value_t = 20)]
-    grid_size: usize,
+    grid_size: u16,
 
     /// Don't draw obstacles on the grid
     #[arg(long, default_value_t = false)]
@@ -36,9 +38,11 @@ struct Cli {
 }
 
 fn main() {
+    let args = Cli::parse();
+
     env_logger::init();
 
-    let args = Cli::parse();
+    let ui = UI::new(args.grid_size, args.grid_size);
 
     let mut end = false;
     let mut paused = false;
@@ -52,24 +56,24 @@ fn main() {
         game::spawn_obstacles(&mut grid, obstacle_count);
     }
 
-    ui::init().unwrap();
-    ui::draw(&grid, steps, snake.len()).unwrap();
+    ui.draw_grid(&grid);
+    ui.draw_score(steps, snake.len());
 
     let (tx, rx) = channel();
 
     // Spawn thread to handle ui input.
     let ui_tx = tx.clone();
     thread::spawn(move || loop {
-        ui_tx.send(ui::read_input()).unwrap();
+        ui_tx.send(input::read()).unwrap();
     });
 
     // Spawn thread to send ticks.
-    let interval = Arc::new(atomic::AtomicU64::new(args.interval));
+    let interval = Arc::new(atomic::AtomicU16::new(args.interval));
     let int_clone = Arc::clone(&interval);
     let tick_tx = tx.clone();
     thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(
-            int_clone.load(atomic::Ordering::Relaxed),
+            int_clone.load(atomic::Ordering::Relaxed).into(),
         ));
         tick_tx.send(Input::Step).unwrap();
     });
@@ -138,21 +142,20 @@ fn main() {
                     }
 
                     steps += 1;
-                    ui::draw(&grid, steps, snake.len()).unwrap();
+                    ui.draw_grid(&grid);
+                    ui.draw_score(steps, snake.len());
                 }
             }
         }
     }
-
-    ui::reset().unwrap();
 }
 
-fn increase_interval(interval: &Arc<AtomicU64>) {
+fn increase_interval(interval: &Arc<AtomicU16>) {
     let i = interval.load(atomic::Ordering::Relaxed);
     interval.store(i + 5, atomic::Ordering::Relaxed);
 }
 
-fn decrease_interval(interval: &Arc<AtomicU64>) {
+fn decrease_interval(interval: &Arc<AtomicU16>) {
     let i = interval.load(atomic::Ordering::Relaxed);
     if i > 45 {
         interval.store(i - 5, atomic::Ordering::Relaxed);
