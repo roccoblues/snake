@@ -1,4 +1,4 @@
-use crate::game::{Grid, Tile};
+use crate::game::{Grid, Point, Tile};
 use crossterm::style::{Attribute, Print, StyledContent, Stylize};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
@@ -45,7 +45,7 @@ impl Screen {
     pub fn draw_grid(&self, grid: &Grid) {
         for x in 0..grid.width() {
             for y in 0..grid.height() {
-                self.draw(x as u16, y as u16, grid.tile((x, y)))
+                self.draw_tile((x, y), grid.tile((x, y)))
             }
         }
     }
@@ -72,19 +72,21 @@ impl Screen {
         .unwrap();
     }
 
-    pub fn draw(&self, x: u16, y: u16, tile: Tile) {
+    pub fn draw_tile(&self, p: Point, tile: Tile) {
         // We use two characters to represent a tile. So we need to make sure to double
         // the x value when we actually draw the grid.
+        let (x, y) = p;
         execute!(
             stdout(),
-            cursor::MoveTo(x * 2 + self.x_adjust, y + self.y_adjust),
-            style::PrintStyledContent(self.tile_to_symbol(x, y, tile))
+            cursor::MoveTo(x as u16 * 2 + self.x_adjust, y as u16 + self.y_adjust),
+            style::PrintStyledContent(self.tile_to_symbol(p, tile))
         )
         .unwrap()
     }
 
     // Returns the actual characters to be drawn for the given tile.
-    fn tile_to_symbol(&self, x: u16, y: u16, tile: Tile) -> StyledContent<&str> {
+    fn tile_to_symbol(&self, p: Point, tile: Tile) -> StyledContent<&str> {
+        let (x, y) = (p.0 as u16, p.1 as u16);
         match tile {
             Tile::Free => "  ".attribute(Attribute::Reset),
             Tile::Snake => "██".green(),
@@ -94,21 +96,21 @@ impl Screen {
                     // first column
                     if y == 0 {
                         "╔══".magenta()
-                    } else if y == self.grid_height - 1 {
+                    } else if y as u16 == self.grid_height - 1 {
                         "╚══".magenta()
                     } else {
                         "║".magenta()
                     }
-                } else if x == self.grid_width - 1 {
+                } else if x as u16 == self.grid_width - 1 {
                     // last column
                     if y == 0 {
                         "╗".magenta()
-                    } else if y == self.grid_height - 1 {
+                    } else if y as u16 == self.grid_height - 1 {
                         "╝".magenta()
                     } else {
                         "║".magenta()
                     }
-                } else if (y == 0 || y == self.grid_height - 1)
+                } else if (y as u16 == 0 || y as u16 == self.grid_height - 1)
                     && (x > 0 || x < self.grid_width - 1)
                 {
                     // fill first+last row
