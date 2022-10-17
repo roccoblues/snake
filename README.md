@@ -2,7 +2,7 @@
 
 A terminal based snake game with autopilot.
 
-[![asciicast](https://asciinema.org/a/529541.svg)](https://asciinema.org/a/52951?t=1)
+[![asciicast](https://asciinema.org/a/529541.svg)](https://asciinema.org/a/529541?t=1)
 
 ## Rationale
 
