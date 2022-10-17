@@ -1,7 +1,7 @@
 use clap::Parser;
 use game::{Direction, Tile};
 use input::Input;
-use output::UI;
+use output::Screen;
 use std::sync::atomic::{self, AtomicU16};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
@@ -42,7 +42,7 @@ fn main() {
 
     env_logger::init();
 
-    let ui = UI::new(args.grid_size, args.grid_size);
+    let screen = Screen::new(args.grid_size, args.grid_size);
 
     let mut end = false;
     let mut paused = false;
@@ -56,8 +56,8 @@ fn main() {
         game::spawn_obstacles(&mut grid, obstacle_count);
     }
 
-    ui.draw_grid(&grid);
-    ui.draw_score(steps, snake.len());
+    screen.draw_grid(&grid);
+    screen.draw_score(steps, snake.len());
 
     let (tx, rx) = channel();
 
@@ -119,12 +119,15 @@ fn main() {
                         // The snake crashed - end the game.
                         Tile::Obstacle | Tile::Snake => {
                             grid[x][y] = Tile::Crash;
+                            screen.draw(x as u16, y as u16, Tile::Crash);
                             end = true;
                         }
                         // The snake ate - spawn new food.
                         Tile::Food => {
                             grid[x][y] = Tile::Snake;
-                            game::spawn_food(&mut grid);
+                            screen.draw(x as u16, y as u16, Tile::Snake);
+                            let (food_x, food_y) = game::spawn_food(&mut grid);
+                            screen.draw(food_x as u16, food_y as u16, Tile::Food);
                             // In arcade mode we decrease the tick interval with every food eaten
                             // to make the game faster.
                             if args.arcade {
@@ -135,15 +138,16 @@ fn main() {
                         // to make it look like it is moving.
                         Tile::Free => {
                             grid[x][y] = Tile::Snake;
+                            screen.draw(x as u16, y as u16, Tile::Snake);
                             let (tail_x, tail_y) = snake.pop_back().unwrap();
                             grid[tail_x][tail_y] = Tile::Free;
+                            screen.draw(tail_x as u16, tail_y as u16, Tile::Free);
                         }
                         Tile::Crash => unreachable!(),
                     }
 
                     steps += 1;
-                    ui.draw_grid(&grid);
-                    ui.draw_score(steps, snake.len());
+                    screen.draw_score(steps, snake.len());
                 }
             }
         }

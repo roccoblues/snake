@@ -7,14 +7,14 @@ use crossterm::terminal::{
 use crossterm::{cursor, execute, style};
 use std::io::stdout;
 
-pub struct UI {
+pub struct Screen {
     grid_width: u16,
     grid_height: u16,
     x_adjust: u16,
     y_adjust: u16,
 }
 
-impl UI {
+impl Screen {
     pub fn new(grid_width: u16, grid_height: u16) -> Self {
         enable_raw_mode().unwrap();
         execute!(
@@ -34,7 +34,7 @@ impl UI {
         let x_adjust = (cols - grid_width * 2) / 2;
         let y_adjust = (rows - grid_height) / 2;
 
-        UI {
+        Screen {
             grid_width,
             grid_height,
             x_adjust,
@@ -115,7 +115,7 @@ impl UI {
     }
 }
 
-impl Drop for UI {
+impl Drop for Screen {
     fn drop(&mut self) {
         execute!(stdout(), cursor::Show, LeaveAlternateScreen).unwrap();
         disable_raw_mode().unwrap();

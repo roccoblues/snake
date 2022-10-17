@@ -41,11 +41,11 @@ Options:
 - [ ] option to restart without exiting
 - [ ] separate grid width / height
 - [ ] wander around longest path if no direct one can be found (https://github.com/chuyangliu/snake/blob/master/docs/algorithms.md#longest-path)
-- [ ] don't redraw the complete screen on every step
 - [ ] fix error handling mess
 - [ ] release binaries
 - [ ] document code
 - [ ] add tests :D
 - [ ] high-resolution mode (braille symbols)
+- [x] don't redraw the complete screen on every step
 - [x] arcade mode where the game increases the speed every time the snake eats
 - [x] increase or decrease the speed with + and - if not in arcade mode

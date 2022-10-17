@@ -82,9 +82,10 @@ pub fn spawn_snake(grid: &mut Grid) -> Snake {
     snake
 }
 
-pub fn spawn_food(grid: &mut Grid) {
+pub fn spawn_food(grid: &mut Grid) -> Point {
     let (x, y) = random_empty_point(grid, 1);
     grid[x][y] = Tile::Food;
+    (x, y)
 }
 
 pub fn spawn_obstacles(grid: &mut Grid, count: u16) {
