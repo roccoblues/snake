@@ -162,6 +162,8 @@ fn main() {
             }
         }
     }
+
+    output::reset()
 }
 
 fn increase_interval(interval: &Arc<AtomicU16>) {

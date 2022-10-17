@@ -124,9 +124,7 @@ impl Screen {
     }
 }
 
-impl Drop for Screen {
-    fn drop(&mut self) {
-        execute!(stdout(), cursor::Show, LeaveAlternateScreen).unwrap();
-        disable_raw_mode().unwrap();
-    }
+pub fn reset() {
+    execute!(stdout(), cursor::Show, LeaveAlternateScreen).unwrap();
+    disable_raw_mode().unwrap();
 }
