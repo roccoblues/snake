@@ -28,6 +28,7 @@ Options:
 * _ESC_ or _q_ to quit
 * _SPACE_ to pause
 * Arrow keys to steer the snake when not in autopilot mode
+* _+_/_-_ to increase / decrease speed when not in arcade mode
 
 ## Credits
 
@@ -36,6 +37,7 @@ Options:
 
 ## TODO
 
+- [ ] countdown before start
 - [ ] option to restart without exiting
 - [ ] separate grid width / height
 - [ ] wander around longest path if no direct one can be found (https://github.com/chuyangliu/snake/blob/master/docs/algorithms.md#longest-path)
