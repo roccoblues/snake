@@ -1,4 +1,4 @@
-use crate::game::{Direction, Grid, Point, Tile};
+use crate::game::{grid_height, grid_width, Direction, Grid, Point, Tile};
 use rand::prelude::*;
 use std::collections::HashMap;
 
@@ -33,12 +33,12 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
     let mut point_details = HashMap::new();
 
     // Create the open list to hold potential points of the path.
-    let mut open_list: Vec<Point> = Vec::with_capacity(grid.len() * grid.len());
+    let mut open_list: Vec<Point> = Vec::with_capacity(grid_width(grid) * grid_height(grid));
 
     // Create a closed list to hold already checked points and initialize it to false
     // which means that no point has been included yet.
     // This closed list is implemented as a boolean 2D array.
-    let mut closed_list = vec![vec![false; grid.len()]; grid.len()];
+    let mut closed_list = vec![vec![false; grid_height(grid)]; grid_width(grid)];
 
     // Put the starting point on the open list.
     open_list.push(start);
@@ -174,11 +174,11 @@ fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
         result.push((x - 1, y));
     }
     // south
-    if x + 1 < grid.len() {
+    if x + 1 < grid_width(grid) {
         result.push((x + 1, y));
     }
     // east
-    if y + 1 < grid.len() {
+    if y + 1 < grid_height(grid) {
         result.push((x, y + 1));
     }
     // west

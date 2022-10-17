@@ -51,12 +51,13 @@ fn get_direction(snake: &Snake) -> Direction {
     }
 }
 
-pub fn create_grid(size: u16) -> Grid {
-    assert!(size >= 10, "Minimum grid size is 10!");
-    let mut grid = vec![vec![Tile::Free; size.into()]; size.into()];
-    for x in 0..=size - 1 {
-        for y in 0..=size - 1 {
-            if x == 0 || y == 0 || x == size - 1 || y == size - 1 {
+pub fn create_grid(width: u16, height: u16) -> Grid {
+    assert!(width >= 12, "Minimum grid size is 12!");
+    assert!(height >= 9, "Minimum grid size is 9!");
+    let mut grid = vec![vec![Tile::Free; height.into()]; width.into()];
+    for x in 0..=width - 1 {
+        for y in 0..=height - 1 {
+            if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
                 grid[x as usize][y as usize] = Tile::Obstacle;
             };
         }
@@ -117,10 +118,9 @@ pub fn random_direction() -> Direction {
 // Returns a random empty point on the grid. The distance parameter specifies
 // the minimum distance from the edge of the grid.
 fn random_empty_point(grid: &Grid, distance: usize) -> Point {
-    let size = grid.len();
     loop {
-        let x = thread_rng().gen_range(distance + 1..size - distance);
-        let y = thread_rng().gen_range(distance + 1..size - distance);
+        let x = thread_rng().gen_range(distance + 1..grid_width(grid) - distance);
+        let y = thread_rng().gen_range(distance + 1..grid_height(grid) - distance);
         if grid[x][y] == Tile::Free {
             break (x, y);
         }
@@ -136,4 +136,12 @@ fn next(p: Point, direction: Direction) -> Point {
         Direction::West => (x - 1, y),
         Direction::East => (x + 1, y),
     }
+}
+
+pub fn grid_width(grid: &Grid) -> usize {
+    grid.len()
+}
+
+pub fn grid_height(grid: &Grid) -> usize {
+    grid[0].len()
 }

@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgAction, Parser};
 use game::{Direction, Tile};
 use input::Input;
 use output::Screen;
@@ -15,17 +15,22 @@ mod path;
 
 /// Game of snake
 #[derive(Parser)]
+#[command(disable_help_flag = true)]
 struct Cli {
     /// Snake advance interval in ms
-    #[arg(short, long, default_value_t = 150)]
+    #[arg(short, long, default_value_t = 200, value_parser = clap::value_parser!(u16).range(40..300))]
     interval: u16,
 
-    /// Width and height of the grid
-    #[arg(short, long, default_value_t = 20)]
-    grid_size: u16,
+    /// Width of the grid
+    #[arg(short = 'w', long, default_value_t = 20)]
+    grid_width: u16,
+
+    /// Height of the grid
+    #[arg(short = 'h', long, default_value_t = 15)]
+    grid_height: u16,
 
     /// Don't draw obstacles on the grid
-    #[arg(long, default_value_t = false)]
+    #[arg(short = 'n', long, default_value_t = false)]
     no_obstacles: bool,
 
     /// The computer controls the snake
@@ -35,6 +40,10 @@ struct Cli {
     /// The snake gets faster with every food eaten
     #[arg(long, default_value_t = false)]
     arcade: bool,
+
+    /// Print help information
+    #[arg(long = "help", action = ArgAction::Help, value_parser = clap::value_parser!(bool))]
+    help: (),
 }
 
 fn main() {
@@ -42,14 +51,14 @@ fn main() {
 
     env_logger::init();
 
-    let screen = Screen::new(args.grid_size, args.grid_size);
+    let screen = Screen::new(args.grid_width, args.grid_height);
 
     let mut end = false;
     let mut paused = false;
     let mut steps = 0;
-    let obstacle_count = args.grid_size * args.grid_size / 25;
+    let obstacle_count = args.grid_width * args.grid_height / 25;
 
-    let mut grid = game::create_grid(args.grid_size);
+    let mut grid = game::create_grid(args.grid_width, args.grid_height);
     let mut snake = game::spawn_snake(&mut grid);
     game::spawn_food(&mut grid);
     if !args.no_obstacles {

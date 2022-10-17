@@ -16,11 +16,13 @@ Game of snake
 Usage: snake [OPTIONS]
 
 Options:
-  -i, --interval <INTERVAL>    Snake advance interval in ms [default: 150]
-  -g, --grid-size <GRID_SIZE>  Width and height of the grid [default: 20]
-      --no-obstacles           Don't draw obstacles on the grid
-      --autopilot              The computer controls the snake
-      --arcade                 The snake gets faster with every food eaten
+  -i, --interval <INTERVAL>        Snake advance interval in ms [default: 200]
+  -w, --grid-width <GRID_WIDTH>    Width of the grid [default: 20]
+  -h, --grid-height <GRID_HEIGHT>  Height of the grid [default: 15]
+  -n, --no-obstacles               Don't draw obstacles on the grid
+      --autopilot                  The computer controls the snake
+      --arcade                     The snake gets faster with every food eaten
+      --help                       Print help information
 ```
 
 ### Keybindings
@@ -39,13 +41,13 @@ Options:
 
 - [ ] countdown before start
 - [ ] option to restart without exiting
-- [ ] separate grid width / height
 - [ ] wander around longest path if no direct one can be found (https://github.com/chuyangliu/snake/blob/master/docs/algorithms.md#longest-path)
 - [ ] fix error handling mess
 - [ ] release binaries
 - [ ] document code
 - [ ] add tests :D
 - [ ] high-resolution mode (braille symbols)
+- [x] separate grid width / height
 - [x] don't redraw the complete screen on every step
 - [x] arcade mode where the game increases the speed every time the snake eats
 - [x] increase or decrease the speed with + and - if not in arcade mode
