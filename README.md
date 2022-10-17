@@ -44,6 +44,6 @@ Options:
 - [ ] release binaries
 - [ ] document code
 - [ ] add tests :D
-- [ ] increase or decrease the speed with + and - in autopilot
 - [ ] high-resolution mode (braille symbols)
 - [x] arcade mode where the game increases the speed every time the snake eats
+- [x] increase or decrease the speed with + and - if not in arcade mode

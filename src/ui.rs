@@ -15,6 +15,8 @@ pub enum Input {
     Exit,
     Step,
     ChangeDirection(Direction),
+    IncreaseSpeed,
+    DecreaseSpeed,
     Unknown,
 }
 
@@ -127,6 +129,8 @@ pub fn read_input() -> Input {
             KeyCode::Right => Input::ChangeDirection(Direction::East),
             KeyCode::Left => Input::ChangeDirection(Direction::West),
             KeyCode::Char(' ') => Input::Pause,
+            KeyCode::Char('+') => Input::IncreaseSpeed,
+            KeyCode::Char('-') => Input::DecreaseSpeed,
             _ => Input::Unknown,
         },
         _ => Input::Unknown,

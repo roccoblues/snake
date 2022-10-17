@@ -1,6 +1,6 @@
 use clap::Parser;
 use game::{Direction, Tile};
-use std::sync::atomic;
+use std::sync::atomic::{self, AtomicU64};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::thread;
@@ -83,6 +83,16 @@ fn main() {
             Input::Exit => break,
             Input::ChangeDirection(d) => direction = d,
             Input::Pause => paused ^= true,
+            Input::DecreaseSpeed => {
+                if !args.arcade {
+                    increase_interval(&interval);
+                }
+            }
+            Input::IncreaseSpeed => {
+                if !args.arcade {
+                    decrease_interval(&interval);
+                }
+            }
             Input::Step => {
                 if !end && !paused {
                     // In autopilot mode calculate the path to the food as a list of directions.
@@ -114,10 +124,7 @@ fn main() {
                             // In arcade mode we decrease the tick interval with every food eaten
                             // to make the game faster.
                             if args.arcade {
-                                let i = interval.load(atomic::Ordering::Relaxed);
-                                if i > 45 {
-                                    interval.store(i - 5, atomic::Ordering::Relaxed);
-                                }
+                                decrease_interval(&interval);
                             }
                         }
                         // If the new head tile is free we pop the tail of the snake
@@ -138,4 +145,16 @@ fn main() {
     }
 
     ui::reset().unwrap();
+}
+
+fn increase_interval(interval: &Arc<AtomicU64>) {
+    let i = interval.load(atomic::Ordering::Relaxed);
+    interval.store(i + 5, atomic::Ordering::Relaxed);
+}
+
+fn decrease_interval(interval: &Arc<AtomicU64>) {
+    let i = interval.load(atomic::Ordering::Relaxed);
+    if i > 45 {
+        interval.store(i - 5, atomic::Ordering::Relaxed);
+    }
 }
