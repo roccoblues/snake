@@ -60,7 +60,7 @@ fn main() {
 
     let mut grid = Grid::new(args.grid_width, args.grid_height);
     let mut snake = grid.spawn_snake();
-    grid.spawn_food();
+    let mut food = grid.spawn_food();
     if !args.no_obstacles {
         grid.spawn_obstacles(obstacle_count);
     }
@@ -112,7 +112,7 @@ fn main() {
                     // In autopilot mode calculate the path to the food as a list of directions.
                     if args.autopilot {
                         if path.is_empty() {
-                            path = path::solve(&grid, snake.head());
+                            path = path::solve(&grid, snake.head(), food);
                         }
                         // Pop the next direction from the path.
                         // If it is empty (no path found), continue in the current
@@ -135,7 +135,7 @@ fn main() {
                         Tile::Food => {
                             grid.set_tile(head, Tile::Snake);
                             screen.draw_tile(head, Tile::Snake);
-                            let food = grid.spawn_food();
+                            food = grid.spawn_food();
                             screen.draw_tile(food, Tile::Food);
                             screen.draw_length(snake.len());
                             // In arcade mode we decrease the tick interval with every food eaten

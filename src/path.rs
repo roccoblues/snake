@@ -20,10 +20,7 @@ type PointDetails = HashMap<Point, PointInfo>;
 // Calculates a path from the start position to the food on the grid using the A* Search Algorithm.
 // The result is a vector of directions. If no path can be found an empty vector is returned.
 // --> https://www.geeksforgeeks.org/a-search-algorithm/
-pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
-    // Find the food on the grid.
-    let target = find_target(grid);
-
+pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     // Use a hashmap to hold the details of a point.
     let mut point_details = HashMap::new();
 
@@ -121,19 +118,6 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
 
     // No valid successors left, brace for impact!
     vec![]
-}
-
-// Finds the food tile in the grid and returns its coordinates.
-fn find_target(grid: &Grid) -> Point {
-    for x in 0..grid.width() {
-        for y in 0..grid.height() {
-            let p = (x, y);
-            if grid.tile(p) == Tile::Food {
-                return p;
-            }
-        }
-    }
-    unreachable!("No food found in grid!")
 }
 
 // Finds the point with the lowest f value in the list and returns it position in the list.
@@ -240,7 +224,10 @@ mod tests {
     fn solve_path_simple() {
         let mut grid = Grid::new(5, 5);
         grid.set_tile((3, 1), Tile::Food);
-        assert_eq!(solve(&grid, (1, 1)), vec![Direction::East, Direction::East])
+        assert_eq!(
+            solve(&grid, (1, 1), (3, 1)),
+            vec![Direction::East, Direction::East]
+        )
     }
 
     #[test]
@@ -248,7 +235,7 @@ mod tests {
         let mut grid = Grid::new(5, 5);
         grid.set_tile((3, 3), Tile::Food);
         assert_eq!(
-            solve(&grid, (1, 1)),
+            solve(&grid, (1, 1), (3, 3)),
             vec![
                 Direction::East,
                 Direction::East,
@@ -265,7 +252,7 @@ mod tests {
         grid.set_tile((2, 2), Tile::Obstacle);
         grid.set_tile((3, 1), Tile::Food);
         assert_eq!(
-            solve(&grid, (1, 1)),
+            solve(&grid, (1, 1), (3, 1)),
             vec![
                 Direction::North,
                 Direction::North,
@@ -284,7 +271,7 @@ mod tests {
         grid.set_tile((2, 3), Tile::Obstacle);
         grid.set_tile((1, 3), Tile::Food);
         assert_eq!(
-            solve(&grid, (3, 3)),
+            solve(&grid, (3, 3), (1, 3)),
             vec![
                 Direction::South,
                 Direction::South,
