@@ -3,7 +3,7 @@ use crossterm::event;
 use crossterm::event::{Event, KeyCode};
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Input {
     Pause,
     Exit,
@@ -14,7 +14,7 @@ pub enum Input {
     Unknown,
 }
 
-// Waits for an ui event and returns the corresponding Input enum.
+// Waits for an UI event and returns the corresponding Input enum.
 pub fn read() -> Input {
     let e = event::read().unwrap();
     match e {
