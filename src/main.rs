@@ -81,12 +81,11 @@ fn main() {
     // Spawn thread to send ticks.
     let interval = Arc::new(atomic::AtomicU16::new(args.interval));
     let int_clone = Arc::clone(&interval);
-    let tick_tx = tx.clone();
     thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(
             int_clone.load(atomic::Ordering::Relaxed).into(),
         ));
-        tick_tx.send(Input::Step).unwrap();
+        tx.send(Input::Step).unwrap();
     });
 
     let mut direction = game::random_direction();
