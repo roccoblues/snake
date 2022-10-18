@@ -22,7 +22,7 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn opposite(&self) -> Direction {
+    pub fn opposite(&self) -> Direction {
         match self {
             Direction::North => Direction::South,
             Direction::South => Direction::North,
@@ -33,54 +33,7 @@ impl Direction {
 }
 
 pub type Point = (usize, usize);
-
-pub struct Snake {
-    body: VecDeque<Point>,
-}
-
-impl Snake {
-    pub fn head(&self) -> Point {
-        *self.body.front().unwrap()
-    }
-
-    // Returns the current direction of the snake.
-    fn direction(&self) -> Direction {
-        let (head_x, head_y) = self.head();
-        let (neck_x, neck_y) = *self.body.get(1).unwrap();
-        if head_x > neck_x {
-            Direction::East
-        } else if head_x < neck_x {
-            Direction::West
-        } else if head_y > neck_y {
-            Direction::South
-        } else {
-            Direction::North
-        }
-    }
-
-    pub fn grow(&mut self, direction: Direction) -> Point {
-        // The snake can't reverse direction. So if the new direction is the opposite
-        // of the current one we discard it.
-        let mut d = self.direction();
-        if direction != d.opposite() {
-            d = direction;
-        }
-
-        // Add the next point in the direction as a new head to the snake.
-        let head = self.head();
-        let next = next(head, d);
-        self.body.push_front(next);
-        next
-    }
-
-    pub fn len(&self) -> u16 {
-        self.body.len() as u16
-    }
-
-    pub fn remove_tail(&mut self) -> Point {
-        self.body.pop_back().unwrap()
-    }
-}
+pub type Snake = VecDeque<Point>;
 
 pub struct Grid {
     tiles: Vec<Vec<Tile>>,
@@ -118,19 +71,12 @@ impl Grid {
     }
 
     pub fn spawn_snake(&mut self) -> Snake {
-        let mut body = VecDeque::with_capacity(2);
-
-        // Spawn first snake point.
-        let head = self.random_empty_point(4);
-        self.set_tile(head, Tile::Snake);
-        body.push_front(head);
-
-        // Spawn a second point in a random direction to ensure the snake is moving.
-        let next = next(head, random_direction());
-        self.set_tile(next, Tile::Snake);
-        body.push_front(next);
-
-        Snake { body }
+        let p = self.random_empty_point(4);
+        self.set_tile(p, Tile::Snake);
+        let mut snake = VecDeque::with_capacity(10);
+        snake.push_front(p);
+        snake.push_front(next(p, random_direction()));
+        snake
     }
 
     pub fn spawn_food(&mut self) -> Point {
@@ -165,7 +111,7 @@ pub fn random_direction() -> Direction {
 }
 
 // Returns the next point in the given direction.
-fn next(p: Point, direction: Direction) -> Point {
+pub fn next(p: Point, direction: Direction) -> Point {
     let (x, y) = p;
     match direction {
         Direction::North => (x, y - 1),

@@ -51,7 +51,7 @@ impl Screen {
         .unwrap();
     }
 
-    pub fn draw_length(&self, length: u16) {
+    pub fn draw_length(&self, length: usize) {
         let len_str = format!("Snake length: {}", length);
         execute!(
             stdout(),

@@ -95,7 +95,13 @@ fn main() {
         match rx.recv().unwrap() {
             Input::Unknown => {}
             Input::Exit => break,
-            Input::ChangeDirection(d) => direction = d,
+            Input::ChangeDirection(d) => {
+                // The snake can't reverse direction. So if the new direction is the opposite
+                // of the current one we discard it.
+                if d != direction.opposite() {
+                    direction = d;
+                }
+            }
             Input::Pause => paused ^= true,
             Input::DecreaseSpeed => {
                 if !args.arcade {
@@ -109,10 +115,12 @@ fn main() {
             }
             Input::Step => {
                 if !end && !paused {
+                    let head = snake.front().unwrap();
+
                     // In autopilot mode calculate the path to the food as a list of directions.
                     if args.autopilot {
                         if path.is_empty() {
-                            path = path::solve(&grid, snake.head(), food);
+                            path = path::solve(&grid, *head, food);
                         }
                         // Pop the next direction from the path.
                         // If it is empty (no path found), continue in the current
@@ -120,21 +128,22 @@ fn main() {
                         direction = path.pop().unwrap_or(direction);
                     }
 
-                    // Grow the snake in the given direction.
-                    let head = snake.grow(direction);
+                    // Return point in front of the snake in the given direction.
+                    let p = game::next(*head, direction);
 
-                    // Check the new snake head tile in the grid.
-                    match grid.tile(head) {
+                    // Check tile in the grid.
+                    match grid.tile(p) {
                         // The snake crashed - end the game.
                         Tile::Obstacle | Tile::Snake => {
-                            grid.set_tile(head, Tile::Crash);
-                            screen.draw_tile(head, Tile::Crash);
+                            grid.set_tile(p, Tile::Crash);
+                            screen.draw_tile(p, Tile::Crash);
                             end = true;
                         }
                         // The snake ate - spawn new food.
                         Tile::Food => {
-                            grid.set_tile(head, Tile::Snake);
-                            screen.draw_tile(head, Tile::Snake);
+                            snake.push_front(p);
+                            grid.set_tile(p, Tile::Snake);
+                            screen.draw_tile(p, Tile::Snake);
                             food = grid.spawn_food();
                             screen.draw_tile(food, Tile::Food);
                             screen.draw_length(snake.len());
@@ -144,12 +153,12 @@ fn main() {
                                 decrease_interval(&interval);
                             }
                         }
-                        // If the new head tile is free we pop the tail of the snake
-                        // to make it look like it is moving.
+                        // If the tile is free we pop the tail of the snake to make it look like it is moving.
                         Tile::Free => {
-                            grid.set_tile(head, Tile::Snake);
-                            screen.draw_tile(head, Tile::Snake);
-                            let tail = snake.remove_tail();
+                            snake.push_front(p);
+                            grid.set_tile(p, Tile::Snake);
+                            screen.draw_tile(p, Tile::Snake);
+                            let tail = snake.pop_back().unwrap();
                             grid.set_tile(tail, Tile::Free);
                             screen.draw_tile(tail, Tile::Free);
                         }
