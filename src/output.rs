@@ -16,15 +16,6 @@ pub struct Screen {
 
 impl Screen {
     pub fn new(grid_width: u16, grid_height: u16) -> Self {
-        enable_raw_mode().unwrap();
-        execute!(
-            stdout(),
-            EnterAlternateScreen,
-            Clear(ClearType::All),
-            cursor::Hide,
-        )
-        .unwrap();
-
         // Check if the terminal size fits the grid plus score information.
         let (cols, rows) = size().unwrap();
         assert!(cols > grid_width * 2 + 2, "Terminal width isn't enough!");
@@ -95,6 +86,17 @@ fn tile_to_symbol(tile: Tile) -> StyledContent<&'static str> {
         Tile::Obstacle => "▓▓".white(),
         Tile::Crash => "XX".red().on_white(),
     }
+}
+
+pub fn init() {
+    enable_raw_mode().unwrap();
+    execute!(
+        stdout(),
+        EnterAlternateScreen,
+        Clear(ClearType::All),
+        cursor::Hide,
+    )
+    .unwrap();
 }
 
 pub fn reset() {

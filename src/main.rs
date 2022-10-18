@@ -50,6 +50,7 @@ fn main() {
     let args = Cli::parse();
 
     env_logger::init();
+    output::init();
 
     let screen = Screen::new(args.grid_width, args.grid_height);
 
@@ -123,7 +124,7 @@ fn main() {
                     // Grow the snake in the given direction.
                     let head = snake.grow(direction);
 
-                    // Mark the new snake head tile in the grid.
+                    // Check the new snake head tile in the grid.
                     match grid.tile(head) {
                         // The snake crashed - end the game.
                         Tile::Obstacle | Tile::Snake => {
