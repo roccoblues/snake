@@ -39,7 +39,6 @@ Options:
 
 ## TODO
 
-- [ ] github action with test + clippy
 - [ ] cli option to fit grid to terminal
 - [ ] countdown before start
 - [ ] option to restart without exiting
@@ -49,6 +48,7 @@ Options:
 - [ ] document code
 - [ ] add tests :D
 - [ ] high-resolution mode (braille symbols)
+- [x] github action with test + clippy
 - [x] separate grid width / height
 - [x] don't redraw the complete screen on every step
 - [x] arcade mode where the game increases the speed every time the snake eats
