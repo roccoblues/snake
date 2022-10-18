@@ -39,6 +39,7 @@ Options:
 
 ## TODO
 
+- [ ] github action with test + clippy
 - [ ] cli option to fit grid to terminal
 - [ ] countdown before start
 - [ ] option to restart without exiting
