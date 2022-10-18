@@ -59,13 +59,12 @@ fn main() {
     let obstacle_count = args.grid_width * args.grid_height / 25;
 
     let mut grid = Grid::new(args.grid_width, args.grid_height);
-    let mut snake = game::spawn_snake(&mut grid);
-    game::spawn_food(&mut grid);
+    let mut snake = grid.spawn_snake();
+    grid.spawn_food();
     if !args.no_obstacles {
-        game::spawn_obstacles(&mut grid, obstacle_count);
+        grid.spawn_obstacles(obstacle_count);
     }
 
-    screen.draw_border();
     screen.draw_grid(&grid);
     screen.draw_steps(steps);
     screen.draw_length(snake.len());
@@ -122,7 +121,7 @@ fn main() {
                     }
 
                     // Grow the snake in the given direction.
-                    let head = game::grow_snake(&mut snake, direction);
+                    let head = snake.grow(direction);
 
                     // Mark the new snake head tile in the grid.
                     match grid.tile(head) {
@@ -136,7 +135,7 @@ fn main() {
                         Tile::Food => {
                             grid.set_tile(head, Tile::Snake);
                             screen.draw_tile(head, Tile::Snake);
-                            let food = game::spawn_food(&mut grid);
+                            let food = grid.spawn_food();
                             screen.draw_tile(food, Tile::Food);
                             screen.draw_length(snake.len());
                             // In arcade mode we decrease the tick interval with every food eaten

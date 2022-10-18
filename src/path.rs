@@ -241,17 +241,17 @@ mod tests {
 
     #[test]
     fn solve_path_simple() {
-        let mut grid = Grid::new(3, 3);
-        grid.set_tile((2, 0), Tile::Food);
-        assert_eq!(solve(&grid, (0, 0)), vec![Direction::East, Direction::East])
+        let mut grid = Grid::new(5, 5);
+        grid.set_tile((3, 1), Tile::Food);
+        assert_eq!(solve(&grid, (1, 1)), vec![Direction::East, Direction::East])
     }
 
     #[test]
     fn solve_path_diagonal() {
-        let mut grid = Grid::new(3, 3);
-        grid.set_tile((2, 2), Tile::Food);
+        let mut grid = Grid::new(5, 5);
+        grid.set_tile((3, 3), Tile::Food);
         assert_eq!(
-            solve(&grid, (0, 0)),
+            solve(&grid, (1, 1)),
             vec![
                 Direction::East,
                 Direction::East,
@@ -263,12 +263,12 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle() {
-        let mut grid = Grid::new(3, 3);
-        grid.set_tile((1, 0), Tile::Obstacle);
-        grid.set_tile((1, 1), Tile::Obstacle);
-        grid.set_tile((2, 0), Tile::Food);
+        let mut grid = Grid::new(5, 5);
+        grid.set_tile((2, 1), Tile::Obstacle);
+        grid.set_tile((2, 2), Tile::Obstacle);
+        grid.set_tile((3, 1), Tile::Food);
         assert_eq!(
-            solve(&grid, (0, 0)),
+            solve(&grid, (1, 1)),
             vec![
                 Direction::North,
                 Direction::North,
@@ -282,12 +282,12 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle_reverse() {
-        let mut grid = Grid::new(3, 3);
-        grid.set_tile((1, 1), Tile::Obstacle);
-        grid.set_tile((1, 2), Tile::Obstacle);
-        grid.set_tile((0, 2), Tile::Food);
+        let mut grid = Grid::new(5, 5);
+        grid.set_tile((2, 2), Tile::Obstacle);
+        grid.set_tile((2, 3), Tile::Obstacle);
+        grid.set_tile((1, 3), Tile::Food);
         assert_eq!(
-            solve(&grid, (2, 2)),
+            solve(&grid, (3, 3)),
             vec![
                 Direction::South,
                 Direction::South,

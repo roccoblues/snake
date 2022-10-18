@@ -51,45 +51,10 @@ impl Screen {
         }
     }
 
-    pub fn draw_border(&self) {
-        draw_styled(self.x_adjust - 1, self.y_adjust - 1, "╔".magenta());
-        draw_styled(
-            self.x_adjust + 1 + self.grid_width * 2,
-            self.y_adjust - 1,
-            "╗".magenta(),
-        );
-        draw_styled(
-            self.x_adjust - 1,
-            self.y_adjust + self.grid_height + 1,
-            "╚".magenta(),
-        );
-        draw_styled(
-            self.x_adjust + 1 + self.grid_width * 2,
-            self.y_adjust + self.grid_height + 1,
-            "╝".magenta(),
-        );
-        // top
-        for x in self.x_adjust..=self.x_adjust + self.grid_width * 2 {
-            draw_styled(x, self.y_adjust - 1, "═".magenta());
-        }
-        // bottom
-        for x in self.x_adjust..=self.x_adjust + self.grid_width * 2 {
-            draw_styled(x, self.y_adjust + self.grid_height + 1, "═".magenta());
-        }
-        // left
-        for y in self.y_adjust..=self.y_adjust + self.grid_height {
-            draw_styled(self.x_adjust - 1, y, "║".magenta());
-        }
-        // right
-        for y in self.y_adjust..=self.y_adjust + self.grid_height {
-            draw_styled(self.x_adjust + self.grid_width * 2 + 1, y, "║".magenta());
-        }
-    }
-
     pub fn draw_steps(&self, steps: u32) {
         execute!(
             stdout(),
-            cursor::MoveTo(self.x_adjust, self.y_adjust - 2),
+            cursor::MoveTo(self.x_adjust, self.y_adjust - 1),
             Print(format!("Steps: {}", steps)),
         )
         .unwrap();
@@ -97,36 +62,28 @@ impl Screen {
 
     pub fn draw_length(&self, length: u16) {
         let len_str = format!("Snake length: {}", length);
-        draw(
-            self.x_adjust + self.grid_width * 2 - len_str.chars().count() as u16 + 1,
-            self.y_adjust - 2,
-            &len_str,
+        execute!(
+            stdout(),
+            cursor::MoveTo(
+                self.x_adjust + self.grid_width * 2 - len_str.chars().count() as u16,
+                self.y_adjust - 1
+            ),
+            Print(len_str),
         )
+        .unwrap()
     }
 
     pub fn draw_tile(&self, p: Point, tile: Tile) {
         // We use two characters to represent a tile. So we need to make sure to double
         // the x value when we actually draw the grid.
         let (x, y) = p;
-        draw_styled(
-            x as u16 * 2 + self.x_adjust,
-            y as u16 + self.y_adjust,
-            tile_to_symbol(tile),
-        );
+        execute!(
+            stdout(),
+            cursor::MoveTo(x as u16 * 2 + self.x_adjust, y as u16 + self.y_adjust),
+            style::PrintStyledContent(tile_to_symbol(tile)),
+        )
+        .unwrap()
     }
-}
-
-fn draw(x: u16, y: u16, str: &str) {
-    execute!(stdout(), cursor::MoveTo(x, y), Print(str),).unwrap()
-}
-
-fn draw_styled(x: u16, y: u16, content: StyledContent<&str>) {
-    execute!(
-        stdout(),
-        cursor::MoveTo(x, y),
-        style::PrintStyledContent(content),
-    )
-    .unwrap()
 }
 
 // Returns the actual characters to be drawn for the given tile.
@@ -136,7 +93,7 @@ fn tile_to_symbol(tile: Tile) -> StyledContent<&'static str> {
         Tile::Snake => "██".green(),
         Tile::Food => "██".yellow(),
         Tile::Obstacle => "▓▓".white(),
-        Tile::Crash => "××".red().on_white(),
+        Tile::Crash => "XX".red().on_white(),
     }
 }
 

@@ -58,6 +58,21 @@ impl Snake {
         }
     }
 
+    pub fn grow(&mut self, direction: Direction) -> Point {
+        // The snake can't reverse direction. So if the new direction is the opposite
+        // of the current one we discard it.
+        let mut d = self.direction();
+        if direction != d.opposite() {
+            d = direction;
+        }
+
+        // Add the next point in the direction as a new head to the snake.
+        let head = self.head();
+        let next = next(head, d);
+        self.body.push_front(next);
+        next
+    }
+
     pub fn len(&self) -> u16 {
         self.body.len() as u16
     }
@@ -73,7 +88,14 @@ pub struct Grid {
 
 impl Grid {
     pub fn new(width: u16, height: u16) -> Self {
-        let tiles = vec![vec![Tile::Free; height.into()]; width.into()];
+        let mut tiles = vec![vec![Tile::Free; height.into()]; width.into()];
+        for x in 0..=width - 1 {
+            for y in 0..=height - 1 {
+                if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
+                    tiles[x as usize][y as usize] = Tile::Obstacle;
+                };
+            }
+        }
         Self { tiles }
     }
 
@@ -95,62 +117,47 @@ impl Grid {
         self.tiles[0].len()
     }
 
+    pub fn spawn_snake(&mut self) -> Snake {
+        let mut body = VecDeque::with_capacity(2);
+
+        // Spawn first snake point.
+        let head = self.random_empty_point(4);
+        self.set_tile(head, Tile::Snake);
+        body.push_front(head);
+
+        // Spawn a second point in a random direction to ensure the snake is moving.
+        let next = next(head, random_direction());
+        self.set_tile(next, Tile::Snake);
+        body.push_front(next);
+
+        Snake { body }
+    }
+
+    pub fn spawn_food(&mut self) -> Point {
+        let p = self.random_empty_point(1);
+        self.set_tile(p, Tile::Food);
+        p
+    }
+
+    pub fn spawn_obstacles(&mut self, count: u16) {
+        for _ in 0..=count {
+            let p = self.random_empty_point(0);
+            self.set_tile(p, Tile::Obstacle);
+        }
+    }
+
     // Returns a random empty point on the grid. The distance parameter specifies
     // the minimum distance from the edge of the grid.
     fn random_empty_point(&self, distance: usize) -> Point {
         loop {
-            let x = thread_rng().gen_range(distance..self.width() - distance);
-            let y = thread_rng().gen_range(distance..self.height() - distance);
+            let x = thread_rng().gen_range(distance + 1..self.width() - distance);
+            let y = thread_rng().gen_range(distance + 1..self.height() - distance);
             let p = (x, y);
             if self.tile(p) == Tile::Free {
                 break p;
             }
         }
     }
-}
-
-pub fn spawn_snake(grid: &mut Grid) -> Snake {
-    let mut body = VecDeque::with_capacity(2);
-
-    // Spawn first snake point.
-    let head = grid.random_empty_point(4);
-    grid.set_tile(head, Tile::Snake);
-    body.push_front(head);
-
-    // Spawn a second point in a random direction to ensure the snake is moving.
-    let next = next(head, random_direction());
-    grid.set_tile(next, Tile::Snake);
-    body.push_front(next);
-
-    Snake { body }
-}
-
-pub fn spawn_food(grid: &mut Grid) -> Point {
-    let p = grid.random_empty_point(1);
-    grid.set_tile(p, Tile::Food);
-    p
-}
-
-pub fn spawn_obstacles(grid: &mut Grid, count: u16) {
-    for _ in 0..=count {
-        let p = grid.random_empty_point(0);
-        grid.set_tile(p, Tile::Obstacle);
-    }
-}
-
-pub fn grow_snake(snake: &mut Snake, direction: Direction) -> Point {
-    // The snake can't reverse direction. So if the new direction is the opposite
-    // of the current one we discard it.
-    let mut d = snake.direction();
-    if direction != d.opposite() {
-        d = direction;
-    }
-
-    // Add the next point in the direction as a new head to the snake.
-    let head = snake.head();
-    let next = next(head, d);
-    snake.body.push_front(next);
-    next
 }
 
 pub fn random_direction() -> Direction {
