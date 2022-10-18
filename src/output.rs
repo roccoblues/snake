@@ -27,12 +27,12 @@ impl Screen {
 
         // Check if the terminal size fits the grid plus score information.
         let (cols, rows) = size().unwrap();
-        assert!(cols > grid_width * 2, "Terminal width isn't enough!");
-        assert!(rows > grid_height + 1, "Terminal height isn't enough!");
+        assert!(cols > grid_width * 2 + 2, "Terminal width isn't enough!");
+        assert!(rows > grid_height + 3, "Terminal height isn't enough!");
 
         // Calculate x and y adjustment needed to center the grid on screen.
-        let x_adjust = (cols - grid_width * 2) / 2;
-        let y_adjust = (rows - grid_height) / 2;
+        let x_adjust = (cols - grid_width * 2 + 2) / 2;
+        let y_adjust = (rows - grid_height + 3) / 2;
 
         Screen {
             grid_width,
@@ -43,84 +43,100 @@ impl Screen {
     }
 
     pub fn draw_grid(&self, grid: &Grid) {
-        for x in 0..grid.width() {
-            for y in 0..grid.height() {
-                self.draw_tile((x, y), grid.tile((x, y)))
+        for x in 0..self.grid_width {
+            for y in 0..self.grid_height {
+                let p = (x.into(), y.into());
+                self.draw_tile(p, grid.tile(p))
             }
+        }
+    }
+
+    pub fn draw_border(&self) {
+        draw_styled(self.x_adjust - 1, self.y_adjust - 1, "╔".magenta());
+        draw_styled(
+            self.x_adjust + 1 + self.grid_width * 2,
+            self.y_adjust - 1,
+            "╗".magenta(),
+        );
+        draw_styled(
+            self.x_adjust - 1,
+            self.y_adjust + self.grid_height + 1,
+            "╚".magenta(),
+        );
+        draw_styled(
+            self.x_adjust + 1 + self.grid_width * 2,
+            self.y_adjust + self.grid_height + 1,
+            "╝".magenta(),
+        );
+        // top
+        for x in self.x_adjust..=self.x_adjust + self.grid_width * 2 {
+            draw_styled(x, self.y_adjust - 1, "═".magenta());
+        }
+        // bottom
+        for x in self.x_adjust..=self.x_adjust + self.grid_width * 2 {
+            draw_styled(x, self.y_adjust + self.grid_height + 1, "═".magenta());
+        }
+        // left
+        for y in self.y_adjust..=self.y_adjust + self.grid_height {
+            draw_styled(self.x_adjust - 1, y, "║".magenta());
+        }
+        // right
+        for y in self.y_adjust..=self.y_adjust + self.grid_height {
+            draw_styled(self.x_adjust + self.grid_width * 2 + 1, y, "║".magenta());
         }
     }
 
     pub fn draw_steps(&self, steps: u32) {
         execute!(
             stdout(),
-            cursor::MoveTo(self.x_adjust, self.y_adjust - 1),
+            cursor::MoveTo(self.x_adjust, self.y_adjust - 2),
             Print(format!("Steps: {}", steps)),
         )
         .unwrap();
     }
 
-    pub fn draw_length(&self, length: usize) {
+    pub fn draw_length(&self, length: u16) {
         let len_str = format!("Snake length: {}", length);
-        execute!(
-            stdout(),
-            cursor::MoveTo(
-                self.x_adjust + self.grid_width * 2 - len_str.chars().count() as u16 - 1,
-                self.y_adjust - 1
-            ),
-            Print(len_str)
+        draw(
+            self.x_adjust + self.grid_width * 2 - len_str.chars().count() as u16 + 1,
+            self.y_adjust - 2,
+            &len_str,
         )
-        .unwrap();
     }
 
     pub fn draw_tile(&self, p: Point, tile: Tile) {
         // We use two characters to represent a tile. So we need to make sure to double
         // the x value when we actually draw the grid.
         let (x, y) = p;
-        execute!(
-            stdout(),
-            cursor::MoveTo(x as u16 * 2 + self.x_adjust, y as u16 + self.y_adjust),
-            style::PrintStyledContent(self.tile_to_symbol(p, tile))
-        )
-        .unwrap()
+        draw_styled(
+            x as u16 * 2 + self.x_adjust,
+            y as u16 + self.y_adjust,
+            tile_to_symbol(tile),
+        );
     }
+}
 
-    // Returns the actual characters to be drawn for the given tile.
-    fn tile_to_symbol(&self, p: Point, tile: Tile) -> StyledContent<&str> {
-        let (x, y) = (p.0 as u16, p.1 as u16);
-        match tile {
-            Tile::Free => "  ".attribute(Attribute::Reset),
-            Tile::Snake => "██".green(),
-            Tile::Food => "██".yellow(),
-            Tile::Obstacle => {
-                if x == 0 {
-                    // first column
-                    if y == 0 {
-                        "╔══".magenta()
-                    } else if y as u16 == self.grid_height - 1 {
-                        "╚══".magenta()
-                    } else {
-                        "║".magenta()
-                    }
-                } else if x as u16 == self.grid_width - 1 {
-                    // last column
-                    if y == 0 {
-                        "╗".magenta()
-                    } else if y as u16 == self.grid_height - 1 {
-                        "╝".magenta()
-                    } else {
-                        "║".magenta()
-                    }
-                } else if (y as u16 == 0 || y as u16 == self.grid_height - 1)
-                    && (x > 0 || x < self.grid_width - 1)
-                {
-                    // fill first+last row
-                    "══".magenta()
-                } else {
-                    "▓▓".white()
-                }
-            }
-            Tile::Crash => "××".red().on_white(),
-        }
+fn draw(x: u16, y: u16, str: &str) {
+    execute!(stdout(), cursor::MoveTo(x, y), Print(str),).unwrap()
+}
+
+fn draw_styled(x: u16, y: u16, content: StyledContent<&str>) {
+    execute!(
+        stdout(),
+        cursor::MoveTo(x, y),
+        style::PrintStyledContent(content),
+    )
+    .unwrap()
+}
+
+// Returns the actual characters to be drawn for the given tile.
+fn tile_to_symbol(tile: Tile) -> StyledContent<&'static str> {
+    match tile {
+        Tile::Free => "  ".attribute(Attribute::Reset),
+        Tile::Snake => "██".green(),
+        Tile::Food => "██".yellow(),
+        Tile::Obstacle => "▓▓".white(),
+        Tile::Crash => "××".red().on_white(),
     }
 }
 

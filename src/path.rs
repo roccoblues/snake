@@ -118,7 +118,7 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
     // If we have valid successors we simply pick a random one.
     let successors = generate_successors(start, grid);
     if !successors.is_empty() {
-        let next = successors[thread_rng().gen_range(0..=successors.len() - 1) as usize];
+        let next = successors[thread_rng().gen_range(0..successors.len()) as usize];
         return vec![get_direction(start, next)];
     }
 
@@ -128,8 +128,8 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
 
 // Finds the food tile in the grid and returns its coordinates.
 fn find_target(grid: &Grid) -> Point {
-    for x in 0..grid.width() - 1 {
-        for y in 0..grid.height() - 1 {
+    for x in 0..grid.width() {
+        for y in 0..grid.height() {
             let p = (x, y);
             if grid.tile(p) == Tile::Food {
                 return p;
@@ -241,18 +241,14 @@ mod tests {
 
     #[test]
     fn solve_path_simple() {
-        let mut grid = Grid {
-            tiles: vec![vec![Tile::Free; 3]; 3],
-        };
+        let mut grid = Grid::new(3, 3);
         grid.set_tile((2, 0), Tile::Food);
         assert_eq!(solve(&grid, (0, 0)), vec![Direction::East, Direction::East])
     }
 
     #[test]
     fn solve_path_diagonal() {
-        let mut grid = Grid {
-            tiles: vec![vec![Tile::Free; 3]; 3],
-        };
+        let mut grid = Grid::new(3, 3);
         grid.set_tile((2, 2), Tile::Food);
         assert_eq!(
             solve(&grid, (0, 0)),
@@ -267,9 +263,7 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle() {
-        let mut grid = Grid {
-            tiles: vec![vec![Tile::Free; 3]; 3],
-        };
+        let mut grid = Grid::new(3, 3);
         grid.set_tile((1, 0), Tile::Obstacle);
         grid.set_tile((1, 1), Tile::Obstacle);
         grid.set_tile((2, 0), Tile::Food);
@@ -288,9 +282,7 @@ mod tests {
 
     #[test]
     fn solve_path_with_obstacle_reverse() {
-        let mut grid = Grid {
-            tiles: vec![vec![Tile::Free; 3]; 3],
-        };
+        let mut grid = Grid::new(3, 3);
         grid.set_tile((1, 1), Tile::Obstacle);
         grid.set_tile((1, 2), Tile::Obstacle);
         grid.set_tile((0, 2), Tile::Food);

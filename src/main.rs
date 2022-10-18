@@ -22,11 +22,11 @@ struct Cli {
     interval: u16,
 
     /// Width of the grid
-    #[arg(short = 'w', long, default_value_t = 20)]
+    #[arg(short = 'w', long, default_value_t = 20, value_parser = clap::value_parser!(u16).range(12..120))]
     grid_width: u16,
 
     /// Height of the grid
-    #[arg(short = 'h', long, default_value_t = 15)]
+    #[arg(short = 'h', long, default_value_t = 15, value_parser = clap::value_parser!(u16).range(9..90))]
     grid_height: u16,
 
     /// Don't draw obstacles on the grid
@@ -65,6 +65,7 @@ fn main() {
         game::spawn_obstacles(&mut grid, obstacle_count);
     }
 
+    screen.draw_border();
     screen.draw_grid(&grid);
     screen.draw_steps(steps);
     screen.draw_length(snake.len());
@@ -112,7 +113,7 @@ fn main() {
                     // In autopilot mode calculate the path to the food as a list of directions.
                     if args.autopilot {
                         if path.is_empty() {
-                            path = path::solve(&grid, *snake.front().unwrap());
+                            path = path::solve(&grid, snake.head());
                         }
                         // Pop the next direction from the path.
                         // If it is empty (no path found), continue in the current
@@ -149,7 +150,7 @@ fn main() {
                         Tile::Free => {
                             grid.set_tile(head, Tile::Snake);
                             screen.draw_tile(head, Tile::Snake);
-                            let tail = snake.pop_back().unwrap();
+                            let tail = snake.remove_tail();
                             grid.set_tile(tail, Tile::Free);
                             screen.draw_tile(tail, Tile::Free);
                         }
