@@ -39,6 +39,7 @@ Options:
 
 ## TODO
 
+- [ ] cli option to fit grid to terminal
 - [ ] countdown before start
 - [ ] option to restart without exiting
 - [ ] wander around longest path if no direct one can be found (https://github.com/chuyangliu/snake/blob/master/docs/algorithms.md#longest-path)

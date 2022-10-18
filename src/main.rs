@@ -1,5 +1,5 @@
 use clap::{ArgAction, Parser};
-use game::{Direction, Tile};
+use game::{Direction, Grid, Tile};
 use input::Input;
 use output::Screen;
 use std::sync::atomic::{self, AtomicU16};
@@ -58,7 +58,7 @@ fn main() {
     let mut steps = 0;
     let obstacle_count = args.grid_width * args.grid_height / 25;
 
-    let mut grid = game::create_grid(args.grid_width, args.grid_height);
+    let mut grid = Grid::new(args.grid_width, args.grid_height);
     let mut snake = game::spawn_snake(&mut grid);
     game::spawn_food(&mut grid);
     if !args.no_obstacles {
