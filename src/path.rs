@@ -11,13 +11,8 @@ struct PointInfo {
     // The estimated movement cost to move from this point on the grid to the final destination.
     // We currently use manhatten distance as an approximation heuristic.
     h: usize,
-}
-
-impl PointInfo {
     // The search algorith picks the next point having the lowest 'f' and proceeds with that.
-    fn f(&self) -> usize {
-        self.g + self.h
-    }
+    f: usize,
 }
 
 type PointDetails = HashMap<Point, PointInfo>;
@@ -89,12 +84,13 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
                 // If a point with the same position as successor is in the open list.
                 Some(next_info) => {
                     // And it has a lower f value than the successor, skip this successor.
-                    if next_info.f() < f {
+                    if next_info.f < f {
                         continue;
                     }
                     // Otherwise, update the details of this point with the values of the successor.
                     next_info.g = g;
                     next_info.h = h;
+                    next_info.f = f;
                     next_info.parent = Some(p);
                 }
                 // If not, add the point to the open list.
@@ -105,6 +101,7 @@ pub fn solve(grid: &Grid, start: Point) -> Vec<Direction> {
                         PointInfo {
                             g,
                             h,
+                            f,
                             parent: Some(p),
                         },
                     );
@@ -148,8 +145,8 @@ fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
     for (n, p) in list.iter().enumerate() {
         match point_details.get(p) {
             Some(p) => {
-                if p.f() < f {
-                    f = p.f();
+                if p.f < f {
+                    f = p.f;
                     i = n;
                 }
             }
