@@ -40,12 +40,12 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn new(width: u16, height: u16) -> Self {
-        let mut tiles = vec![vec![Tile::Free; height.into()]; width.into()];
-        for x in 0..=width - 1 {
-            for y in 0..=height - 1 {
+    pub fn new(width: usize, height: usize) -> Self {
+        let mut tiles = vec![vec![Tile::Free; height]; width];
+        for (x, row) in tiles.iter_mut().enumerate() {
+            for (y, tile) in row.iter_mut().enumerate() {
                 if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
-                    tiles[x as usize][y as usize] = Tile::Obstacle;
+                    *tile = Tile::Obstacle;
                 };
             }
         }

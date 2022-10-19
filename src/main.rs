@@ -59,7 +59,7 @@ fn main() {
     let mut steps = 0;
     let obstacle_count = args.grid_width * args.grid_height / 25;
 
-    let mut grid = Grid::new(args.grid_width, args.grid_height);
+    let mut grid = Grid::new(args.grid_width.into(), args.grid_height.into());
     let mut snake = grid.spawn_snake();
     let mut food = grid.spawn_food();
     if !args.no_obstacles {
