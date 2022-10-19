@@ -48,6 +48,8 @@ Options:
 - [ ] document code
 - [ ] add tests :D
 - [ ] high-resolution mode (braille symbols)
+- [ ] keep track of empty points to better select random new ones
+- [ ] multiple snakes
 - [x] github action with test + clippy
 - [x] separate grid width / height
 - [x] don't redraw the complete screen on every step
