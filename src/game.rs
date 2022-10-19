@@ -95,9 +95,10 @@ impl Grid {
     // Returns a random empty point on the grid. The distance parameter specifies
     // the minimum distance from the edge of the grid.
     fn random_empty_point(&self, distance: usize) -> Point {
+        let mut rng = thread_rng();
         loop {
-            let x = thread_rng().gen_range(distance + 1..self.width() - distance);
-            let y = thread_rng().gen_range(distance + 1..self.height() - distance);
+            let x = rng.gen_range(distance + 1..self.width() - distance);
+            let y = rng.gen_range(distance + 1..self.height() - distance);
             let p = (x, y);
             if self.tile(p) == Tile::Free {
                 break p;
