@@ -1,48 +1,34 @@
 use crate::game::{Direction, Grid, Point, Tile};
 use rand::prelude::*;
-use std::collections::HashMap;
-
-#[derive(Default, Debug)]
-struct PointInfo {
-    parent: Option<Point>,
-    // The movement cost to move from the starting point to this point on the grid,
-    // following the path generated to get there.
-    g: usize,
-    // The estimated movement cost to move from this point on the grid to the final destination.
-    // We currently use manhatten distance as an approximation heuristic.
-    h: i32,
-    // The search algorith picks the next point having the lowest 'f' and proceeds with that.
-    f: usize,
-}
-
-type PointDetails = HashMap<Point, PointInfo>;
 
 // Calculates a path from the start position to the food on the grid using the A* Search Algorithm.
 // The result is a vector of directions. If no path can be found an empty vector is returned.
+//
 // --> https://www.geeksforgeeks.org/a-search-algorithm/
+// g: The movement cost to move from the starting point to this point on the grid,
+//    following the path generated to get there.
+// h: The estimated movement cost to move from this point on the grid to the final destination.
+//    We currently use manhatten distance as an approximation heuristic.
+// f: The search algorith picks the next point having the lowest 'f' and proceeds with that.
 pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
-    // Use a hashmap to hold the details of a point.
-    let mut point_details = HashMap::new();
-
-    // Create the open list to hold potential points of the path.
-    let mut open_list: Vec<Point> = Vec::with_capacity(grid.width() * grid.height());
+    // Create a bunch of 2D arrays to hold the details of a point.
+    let mut parent_list = vec![vec![None; grid.height()]; grid.width()];
+    let mut g_list = vec![vec![0; grid.height()]; grid.width()];
+    let mut h_list = vec![vec![0; grid.height()]; grid.width()];
+    let mut f_list = vec![vec![i32::MAX; grid.height()]; grid.width()];
 
     // Create a closed list to hold already checked points and initialize it to false
     // which means that no point has been included yet.
-    // This closed list is implemented as a boolean 2D array.
     let mut closed_list = vec![vec![false; grid.height()]; grid.width()];
+
+    // Create a open list to hold potential points of the path.
+    let mut open_list: Vec<Point> = Vec::with_capacity(grid.width() * grid.height());
 
     // Put the starting point on the open list.
     open_list.push(start);
-    point_details.insert(
-        start,
-        PointInfo {
-            ..Default::default()
-        },
-    );
 
     // Pop the point with the lowest f value off the open list.
-    while let Some(p) = get_lowest_f(&mut open_list, &point_details) {
+    while let Some(p) = get_lowest_f(&mut open_list, &f_list) {
         let (x, y) = p;
 
         // Push it on the closed list.
@@ -50,58 +36,37 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
 
         // Calculate all valid successors for that point.
         let successors = generate_successors(p, grid);
-        for next in successors.into_iter() {
+        for s in successors.into_iter() {
             // If the successor is already on the closed list, ignore it.
-            let (next_x, next_y) = next;
-            if closed_list[next_x][next_y] {
+            let (s_x, s_y) = s;
+            if closed_list[s_x][s_y] {
                 continue;
             }
 
             // If successor is the target, stop and generate the path.
-            if next == target {
-                point_details.insert(
-                    next,
-                    PointInfo {
-                        parent: Some(p),
-                        ..Default::default()
-                    },
-                );
-                return generate_path(next, &point_details);
+            if s == target {
+                parent_list[s_x][s_y] = Some(p);
+                return generate_path(s, &parent_list);
             }
 
             // Compute g,h and f for the successor.
-            let info = point_details.get(&p).unwrap();
-            let g = info.g + 1;
-            let h = manhatten_distance(next, target);
-            let f = g + h as usize;
+            let g = g_list[x][y] + 1;
+            let h = manhatten_distance(s, target);
+            let f = g + h;
 
-            match point_details.get_mut(&next) {
-                // If a point with the same position as successor is in the open list.
-                Some(next_info) => {
-                    // And it has a lower f value than the successor, skip this successor.
-                    if next_info.f < f {
-                        continue;
-                    }
-                    // Otherwise, update the details of this point with the values of the successor.
-                    next_info.g = g;
-                    next_info.h = h;
-                    next_info.f = f;
-                    next_info.parent = Some(p);
-                }
-                // If not, add the point to the open list.
-                None => {
-                    open_list.push(next);
-                    point_details.insert(
-                        next,
-                        PointInfo {
-                            g,
-                            h,
-                            f,
-                            parent: Some(p),
-                        },
-                    );
-                }
+            // If we have seen the same position with a lower f value, skip this successor.
+            if f_list[s_x][s_y] < f {
+                continue;
             }
+
+            // Otherwise, update the details of this point with the values of the successor.
+            g_list[s_x][s_y] = g;
+            h_list[s_x][s_y] = h;
+            f_list[s_x][s_y] = f;
+            parent_list[s_x][s_y] = Some(p);
+
+            // And push it on the open list.
+            open_list.push(s);
         }
     }
     // If we reach this point we couldn't find a clear path.
@@ -118,19 +83,18 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
 }
 
 // Finds the point with the lowest f value in the list and returns it.
-fn get_lowest_f(list: &mut Vec<Point>, point_details: &PointDetails) -> Option<Point> {
+fn get_lowest_f(list: &mut Vec<Point>, f_list: &[Vec<i32>]) -> Option<Point> {
     if list.is_empty() {
         return None;
     }
 
-    let mut f = usize::MAX;
+    let mut lowest_f = i32::MAX;
     let mut i = 0;
-    for (n, p) in list.iter().enumerate() {
-        if let Some(p) = point_details.get(p) {
-            if p.f < f {
-                f = p.f;
-                i = n;
-            }
+    for (n, (x, y)) in list.iter().enumerate() {
+        let f = f_list[*x][*y];
+        if f < lowest_f {
+            lowest_f = f;
+            i = n;
         }
     }
     Some(list.swap_remove(i))
@@ -172,20 +136,18 @@ fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
 
 // Generates the path from the starting point to the target as a vector of directions.
 // The entries are in reverse order so that a pop() on the vector returns the next direction.
-fn generate_path(target: Point, point_details: &PointDetails) -> Vec<Direction> {
+fn generate_path(target: Point, parent_list: &[Vec<Option<Point>>]) -> Vec<Direction> {
     let mut directions: Vec<Direction> = Vec::new();
-    let mut p = &target;
+    let mut p = target;
     loop {
-        match point_details.get(p) {
-            Some(info) => match &info.parent {
-                Some(parent) => {
-                    let direction = get_direction(*parent, *p);
-                    directions.push(direction);
-                    p = parent;
-                }
-                None => break,
-            },
-            None => unreachable!(),
+        let (x, y) = p;
+        match parent_list[x][y] {
+            Some(parent) => {
+                let direction = get_direction(parent, p);
+                directions.push(direction);
+                p = parent;
+            }
+            None => break,
         }
     }
     directions
