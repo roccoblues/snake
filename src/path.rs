@@ -10,7 +10,7 @@ struct PointInfo {
     g: usize,
     // The estimated movement cost to move from this point on the grid to the final destination.
     // We currently use manhatten distance as an approximation heuristic.
-    h: usize,
+    h: i32,
     // The search algorith picks the next point having the lowest 'f' and proceeds with that.
     f: usize,
 }
@@ -209,11 +209,12 @@ fn get_direction(from: Point, to: Point) -> Direction {
     }
 }
 
-fn manhatten_distance(from: Point, to: Point) -> usize {
+fn manhatten_distance(from: Point, to: Point) -> i32 {
     let (from_x, from_y) = from;
     let (to_x, to_y) = to;
-    let distance = i32::abs(from_x as i32 - to_x as i32) + i32::abs(from_y as i32 - to_y as i32);
-    distance.try_into().unwrap()
+    let dx = (from_x as i32 - to_x as i32).abs();
+    let dy = (from_y as i32 - to_y as i32).abs();
+    dx + dy
 }
 
 #[cfg(test)]
