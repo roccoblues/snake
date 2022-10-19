@@ -75,7 +75,7 @@ impl Grid {
         self.set_tile(p, Tile::Snake);
         let mut snake = VecDeque::with_capacity(10);
         snake.push_front(p);
-        snake.push_front(next(p, random_direction()));
+        snake.push_front(next_point(p, random_direction()));
         snake
     }
 
@@ -111,7 +111,7 @@ pub fn random_direction() -> Direction {
 }
 
 // Returns the next point in the given direction.
-pub fn next(p: Point, direction: Direction) -> Point {
+pub fn next_point(p: Point, direction: Direction) -> Point {
     let (x, y) = p;
     match direction {
         Direction::North => (x, y - 1),

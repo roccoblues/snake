@@ -129,7 +129,7 @@ fn main() {
                     }
 
                     // Return point in front of the snake in the given direction.
-                    let p = game::next(*head, direction);
+                    let p = game::next_point(*head, direction);
 
                     // Check tile in the grid.
                     match grid.tile(p) {
