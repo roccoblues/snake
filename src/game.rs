@@ -95,15 +95,21 @@ impl Grid {
     // Returns a random empty point on the grid. The distance parameter specifies
     // the minimum distance from the edge of the grid.
     fn random_empty_point(&self, distance: usize) -> Point {
-        let mut rng = thread_rng();
-        loop {
-            let x = rng.gen_range(distance + 1..self.width() - distance);
-            let y = rng.gen_range(distance + 1..self.height() - distance);
-            let p = (x, y);
-            if self.tile(p) == Tile::Free {
-                break p;
+        let min_x = distance;
+        let max_x = self.width() - distance - 1;
+        let min_y = distance;
+        let max_y = self.height() - distance - 1;
+
+        let mut points = Vec::with_capacity(self.width() * self.height());
+        for (x, row) in self.tiles.iter().enumerate() {
+            for (y, tile) in row.iter().enumerate() {
+                if x > min_x && x < max_x && y > min_y && y < max_y && *tile == Tile::Free {
+                    points.push((x, y))
+                }
             }
         }
+
+        *points.get(thread_rng().gen_range(0..points.len())).unwrap()
     }
 }
 
