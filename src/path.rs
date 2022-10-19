@@ -41,10 +41,8 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
         },
     );
 
-    while !open_list.is_empty() {
-        // Pop the point with the lowest f value off the open list.
-        let i = lowest_f(&open_list, &point_details);
-        let p = open_list.swap_remove(i);
+    // Pop the point with the lowest f value off the open list.
+    while let Some(p) = get_lowest_f(&mut open_list, &point_details) {
         let (x, y) = p;
 
         // Push it on the closed list.
@@ -106,7 +104,6 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
             }
         }
     }
-
     // If we reach this point we couldn't find a clear path.
 
     // If we have valid successors we simply pick a random one.
@@ -120,24 +117,23 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     vec![]
 }
 
-// Finds the point with the lowest f value in the list and returns it position in the list.
-fn lowest_f(list: &[Point], point_details: &PointDetails) -> usize {
-    assert!(!list.is_empty());
+// Finds the point with the lowest f value in the list and returns it.
+fn get_lowest_f(list: &mut Vec<Point>, point_details: &PointDetails) -> Option<Point> {
+    if list.is_empty() {
+        return None;
+    }
 
     let mut f = usize::MAX;
     let mut i = 0;
     for (n, p) in list.iter().enumerate() {
-        match point_details.get(p) {
-            Some(p) => {
-                if p.f < f {
-                    f = p.f;
-                    i = n;
-                }
+        if let Some(p) = point_details.get(p) {
+            if p.f < f {
+                f = p.f;
+                i = n;
             }
-            None => unreachable!(),
         }
     }
-    i
+    Some(list.swap_remove(i))
 }
 
 // Generates all valid successors of a point.
