@@ -34,83 +34,60 @@ impl Direction {
 
 pub type Point = (usize, usize);
 pub type Snake = VecDeque<Point>;
+pub type Grid = Vec<Vec<Tile>>;
 
-pub struct Grid {
-    tiles: Vec<Vec<Tile>>,
+pub fn create_grid(width: usize, height: usize) -> Grid {
+    let mut grid = vec![vec![Tile::Free; height]; width];
+    for (x, row) in grid.iter_mut().enumerate() {
+        for (y, tile) in row.iter_mut().enumerate() {
+            if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
+                *tile = Tile::Obstacle;
+            };
+        }
+    }
+    grid
 }
 
-impl Grid {
-    pub fn new(width: usize, height: usize) -> Self {
-        let mut tiles = vec![vec![Tile::Free; height]; width];
-        for (x, row) in tiles.iter_mut().enumerate() {
-            for (y, tile) in row.iter_mut().enumerate() {
-                if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
-                    *tile = Tile::Obstacle;
-                };
+pub fn spawn_snake(grid: &mut Grid) -> Snake {
+    let (x, y) = random_empty_point(grid, 4);
+    grid[x][y] = Tile::Snake;
+    let mut snake = VecDeque::with_capacity(10);
+    snake.push_front((x, y));
+    snake.push_front(next_point((x, y), random_direction()));
+    snake
+}
+
+pub fn spawn_food(grid: &mut Grid) -> Point {
+    let (x, y) = random_empty_point(grid, 1);
+    grid[x][y] = Tile::Food;
+    (x, y)
+}
+
+pub fn spawn_obstacles(grid: &mut Grid, count: u16) {
+    for _ in 0..=count {
+        let (x, y) = random_empty_point(grid, 0);
+        grid[x][y] = Tile::Obstacle;
+    }
+}
+
+// Returns a random empty point on the grid. The distance parameter specifies
+// the minimum distance from the edge of the grid.
+fn random_empty_point(grid: &Grid, distance: usize) -> Point {
+    let min_x = distance;
+    let max_x = grid.len() - distance - 1;
+    let min_y = distance;
+    let max_y = grid[0].len() - distance - 1;
+
+    let mut points = Vec::with_capacity(grid.len() * grid[0].len());
+    for (x, row) in grid.iter().enumerate() {
+        for (y, tile) in row.iter().enumerate() {
+            if x > min_x && x < max_x && y > min_y && y < max_y && *tile == Tile::Free {
+                points.push((x, y))
             }
         }
-        Self { tiles }
     }
 
-    pub fn tile(&self, p: Point) -> Tile {
-        let (x, y) = p;
-        self.tiles[x][y]
-    }
-
-    pub fn set_tile(&mut self, p: Point, tile: Tile) {
-        let (x, y) = p;
-        self.tiles[x][y] = tile
-    }
-
-    pub fn width(&self) -> usize {
-        self.tiles.len()
-    }
-
-    pub fn height(&self) -> usize {
-        self.tiles[0].len()
-    }
-
-    pub fn spawn_snake(&mut self) -> Snake {
-        let p = self.random_empty_point(4);
-        self.set_tile(p, Tile::Snake);
-        let mut snake = VecDeque::with_capacity(10);
-        snake.push_front(p);
-        snake.push_front(next_point(p, random_direction()));
-        snake
-    }
-
-    pub fn spawn_food(&mut self) -> Point {
-        let p = self.random_empty_point(1);
-        self.set_tile(p, Tile::Food);
-        p
-    }
-
-    pub fn spawn_obstacles(&mut self, count: u16) {
-        for _ in 0..=count {
-            let p = self.random_empty_point(0);
-            self.set_tile(p, Tile::Obstacle);
-        }
-    }
-
-    // Returns a random empty point on the grid. The distance parameter specifies
-    // the minimum distance from the edge of the grid.
-    fn random_empty_point(&self, distance: usize) -> Point {
-        let min_x = distance;
-        let max_x = self.width() - distance - 1;
-        let min_y = distance;
-        let max_y = self.height() - distance - 1;
-
-        let mut points = Vec::with_capacity(self.width() * self.height());
-        for (x, row) in self.tiles.iter().enumerate() {
-            for (y, tile) in row.iter().enumerate() {
-                if x > min_x && x < max_x && y > min_y && y < max_y && *tile == Tile::Free {
-                    points.push((x, y))
-                }
-            }
-        }
-
-        *points.get(thread_rng().gen_range(0..points.len())).unwrap()
-    }
+    *points.get(thread_rng().gen_range(0..points.len())).unwrap()
 }
 
 pub fn random_direction() -> Direction {

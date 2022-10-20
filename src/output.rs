@@ -36,8 +36,9 @@ impl Screen {
     pub fn draw_grid(&self, grid: &Grid) {
         for x in 0..self.grid_width {
             for y in 0..self.grid_height {
-                let p = (x.into(), y.into());
-                self.draw_tile(p, grid.tile(p))
+                let x = x as usize;
+                let y = y as usize;
+                self.draw_tile((x, y), grid[x][y])
             }
         }
     }
