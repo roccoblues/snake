@@ -14,7 +14,6 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     // Create a bunch of 2D arrays to hold the details of a point.
     let mut parent_list = vec![vec![None; grid.height()]; grid.width()];
     let mut g_list = vec![vec![0; grid.height()]; grid.width()];
-    let mut h_list = vec![vec![0; grid.height()]; grid.width()];
     let mut f_list = vec![vec![i32::MAX; grid.height()]; grid.width()];
 
     // Create a closed list to hold already checked points and initialize it to false
@@ -61,7 +60,6 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
 
             // Otherwise, update the details of this point with the values of the successor.
             g_list[s_x][s_y] = g;
-            h_list[s_x][s_y] = h;
             f_list[s_x][s_y] = f;
             parent_list[s_x][s_y] = Some(p);
 
