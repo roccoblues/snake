@@ -1,7 +1,7 @@
 use crate::game::{Direction, Grid, Point, Tile};
 use rand::prelude::*;
 
-// Calculates a path from the start position to the food on the grid using the A* Search Algorithm.
+// Calculates a path from the start position to the target on the grid using the A* Search Algorithm.
 // The result is a vector of directions. If no path can be found an empty vector is returned.
 //
 // --> https://www.geeksforgeeks.org/a-search-algorithm/
