@@ -1,4 +1,4 @@
-use crate::game::Direction;
+use crate::types::Direction;
 use crossterm::event;
 use crossterm::event::{Event, KeyCode};
 

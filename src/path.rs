@@ -1,4 +1,4 @@
-use crate::game::{Direction, Grid, Point, Tile};
+use crate::types::{Direction, Grid, Point, Tile};
 use rand::prelude::*;
 
 // Calculates a path from the start position to the target on the grid using the A* Search Algorithm.

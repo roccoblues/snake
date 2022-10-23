@@ -1,68 +1,39 @@
-use clap::{ArgAction, Parser};
-use game::{create_grid, spawn_food, spawn_obstacles, spawn_snake, Direction, Tile};
+use clap::Parser;
+use config::Config;
 use input::Input;
 use output::Screen;
+use snake::{create_grid, spawn_food, spawn_obstacles, spawn_snake};
 use std::sync::atomic::{self, AtomicU16};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
+use types::{Direction, Tile};
 
-mod game;
+mod config;
 mod input;
 mod output;
 mod path;
-
-/// Game of snake
-#[derive(Parser)]
-#[command(disable_help_flag = true)]
-struct Cli {
-    /// Snake advance interval in ms
-    #[arg(short, long, default_value_t = 200, value_parser = clap::value_parser!(u16).range(40..300))]
-    interval: u16,
-
-    /// Width of the grid
-    #[arg(short = 'w', long, default_value_t = 20, value_parser = clap::value_parser!(u16).range(12..120))]
-    grid_width: u16,
-
-    /// Height of the grid
-    #[arg(short = 'h', long, default_value_t = 15, value_parser = clap::value_parser!(u16).range(9..90))]
-    grid_height: u16,
-
-    /// Don't draw obstacles on the grid
-    #[arg(short = 'n', long, default_value_t = false)]
-    no_obstacles: bool,
-
-    /// The computer controls the snake
-    #[arg(long, default_value_t = false)]
-    autopilot: bool,
-
-    /// The snake gets faster with every food eaten
-    #[arg(long, default_value_t = false)]
-    arcade: bool,
-
-    /// Print help information
-    #[arg(long = "help", action = ArgAction::Help, value_parser = clap::value_parser!(bool))]
-    help: (),
-}
+mod snake;
+mod types;
 
 fn main() {
-    let args = Cli::parse();
+    let config = Config::parse();
 
     env_logger::init();
     output::init();
 
-    let screen = Screen::new(args.grid_width, args.grid_height);
+    let screen = Screen::new(config.grid_width, config.grid_height);
 
     let mut end = false;
     let mut paused = false;
     let mut steps = 0;
-    let obstacle_count = args.grid_width * args.grid_height / 25;
+    let obstacle_count = config.grid_width * config.grid_height / 25;
 
-    let mut grid = create_grid(args.grid_width.into(), args.grid_height.into());
+    let mut grid = create_grid(config.grid_width.into(), config.grid_height.into());
     let mut snake = spawn_snake(&mut grid);
     let mut food = spawn_food(&mut grid);
-    if !args.no_obstacles {
+    if !config.no_obstacles {
         spawn_obstacles(&mut grid, obstacle_count);
     }
 
@@ -79,7 +50,7 @@ fn main() {
     });
 
     // Spawn thread to send ticks.
-    let interval = Arc::new(atomic::AtomicU16::new(args.interval));
+    let interval = Arc::new(atomic::AtomicU16::new(config.interval));
     let int_clone = Arc::clone(&interval);
     thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(
@@ -88,7 +59,7 @@ fn main() {
         tx.send(Input::Step).unwrap();
     });
 
-    let mut direction = game::random_direction();
+    let mut direction = snake::random_direction();
     let mut path: Vec<Direction> = Vec::new();
 
     loop {
@@ -104,12 +75,12 @@ fn main() {
             }
             Input::Pause => paused ^= true,
             Input::DecreaseSpeed => {
-                if !args.arcade {
+                if !config.arcade {
                     increase_interval(&interval);
                 }
             }
             Input::IncreaseSpeed => {
-                if !args.arcade {
+                if !config.arcade {
                     decrease_interval(&interval);
                 }
             }
@@ -121,7 +92,7 @@ fn main() {
                 let head = snake.front().unwrap();
 
                 // In autopilot mode calculate the path to the food as a list of directions.
-                if args.autopilot {
+                if config.autopilot {
                     if path.is_empty() {
                         path = path::solve(&grid, *head, food);
                     }
@@ -132,7 +103,7 @@ fn main() {
                 }
 
                 // Return point in front of the snake in the given direction.
-                let p = game::next_point(*head, direction);
+                let p = snake::next_point(*head, direction);
                 let (x, y) = p;
 
                 // Check tile in the grid.
@@ -153,7 +124,7 @@ fn main() {
                         screen.draw_length(snake.len());
                         // In arcade mode we decrease the tick interval with every food eaten
                         // to make the game faster.
-                        if args.arcade {
+                        if config.arcade {
                             decrease_interval(&interval);
                         }
                     }
@@ -176,7 +147,7 @@ fn main() {
         }
     }
 
-    output::reset()
+    output::reset();
 }
 
 fn increase_interval(interval: &Arc<AtomicU16>) {

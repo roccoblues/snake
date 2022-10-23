@@ -1,4 +1,4 @@
-use crate::game::{Grid, Point, Tile};
+use crate::types::{Grid, Point, Tile};
 use crossterm::style::{Attribute, Print, StyledContent, Stylize};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
@@ -6,6 +6,9 @@ use crossterm::terminal::{
 };
 use crossterm::{cursor, execute, style};
 use std::io::stdout;
+
+pub const MIN_GRID_WIDTH: u16 = 12;
+pub const MIN_GRID_HEIGHT: u16 = 10;
 
 pub struct Screen {
     grid_width: u16,
@@ -16,14 +19,13 @@ pub struct Screen {
 
 impl Screen {
     pub fn new(grid_width: u16, grid_height: u16) -> Self {
-        // Check if the terminal size fits the grid plus score information.
-        let (cols, rows) = size().unwrap();
-        assert!(cols > grid_width * 2 + 2, "Terminal width isn't enough!");
-        assert!(rows > grid_height + 3, "Terminal height isn't enough!");
+        // We use two characters to represent a tile. So we need to make sure to double
+        // the x value when we actually draw the grid.
 
         // Calculate x and y adjustment needed to center the grid on screen.
-        let x_adjust = (cols - grid_width * 2 + 2) / 2;
-        let y_adjust = (rows - grid_height + 3) / 2;
+        let (cols, rows) = size().unwrap();
+        let x_adjust = (cols - grid_width * 2) / 2;
+        let y_adjust = (rows - grid_height) / 2;
 
         Screen {
             grid_width,
@@ -87,6 +89,16 @@ fn tile_to_symbol(tile: Tile) -> StyledContent<&'static str> {
         Tile::Obstacle => "▓▓".white(),
         Tile::Crash => "XX".red().on_white(),
     }
+}
+
+pub fn max_grid_width() -> u16 {
+    let (cols, _) = size().unwrap();
+    cols / 2
+}
+
+pub fn max_grid_height() -> u16 {
+    let (_, rows) = size().unwrap();
+    rows
 }
 
 pub fn init() {
