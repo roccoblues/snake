@@ -94,7 +94,7 @@ fn main() {
                 // In autopilot mode calculate the path to the food as a list of directions.
                 if config.autopilot {
                     if path.is_empty() {
-                        path = path::solve(&grid, *head, food);
+                        path = path::find(&grid, *head, food);
                     }
                     // Pop the next direction from the path.
                     // If it is empty (no path found), continue in the current

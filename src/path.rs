@@ -11,7 +11,7 @@ use std::collections::HashSet;
 // h: The estimated movement cost to move from this point on the grid to the final destination.
 //    We currently use manhatten distance as an approximation heuristic.
 // f: The search algorith picks the next point having the lowest 'f' and proceeds with that.
-pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
+pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     let (start_x, start_y) = start;
     let grid_width = grid.len();
     let grid_height = grid[0].len();
@@ -189,7 +189,7 @@ mod tests {
         let mut grid = vec![vec![Tile::Free; 3]; 3];
         grid[2][0] = Tile::Food;
         assert_eq!(
-            solve(&grid, (0, 0), (2, 0)),
+            find(&grid, (0, 0), (2, 0)),
             vec![Direction::East, Direction::East]
         )
     }
@@ -201,7 +201,7 @@ mod tests {
         grid[1][1] = Tile::Obstacle;
         grid[2][0] = Tile::Food;
         assert_eq!(
-            solve(&grid, (0, 0), (2, 0)),
+            find(&grid, (0, 0), (2, 0)),
             vec![
                 Direction::North,
                 Direction::North,
@@ -220,7 +220,7 @@ mod tests {
         grid[1][2] = Tile::Obstacle;
         grid[0][2] = Tile::Food;
         assert_eq!(
-            solve(&grid, (2, 2), (0, 2)),
+            find(&grid, (2, 2), (0, 2)),
             vec![
                 Direction::South,
                 Direction::South,
