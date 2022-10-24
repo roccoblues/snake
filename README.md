@@ -45,10 +45,10 @@ Options:
 - [ ] wander around longest path if no direct one can be found (https://github.com/chuyangliu/snake/blob/master/docs/algorithms.md#longest-path)
 - [ ] fix error handling mess
 - [ ] release binaries
-- [ ] document code
 - [ ] add tests :D
 - [ ] high-resolution mode (braille symbols)
 - [ ] multiple snakes
+- [x] path: open list should be a set
 - [x] github action with test + clippy
 - [x] separate grid width / height
 - [x] don't redraw the complete screen on every step

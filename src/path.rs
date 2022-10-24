@@ -1,5 +1,6 @@
 use crate::types::{Direction, Grid, Point, Tile};
 use rand::prelude::*;
+use std::collections::HashSet;
 
 // Calculates a path from the start position to the target on the grid using the A* Search Algorithm.
 // The result is a vector of directions. If no path can be found an empty vector is returned.
@@ -11,6 +12,7 @@ use rand::prelude::*;
 //    We currently use manhatten distance as an approximation heuristic.
 // f: The search algorith picks the next point having the lowest 'f' and proceeds with that.
 pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
+    let (start_x, start_y) = start;
     let grid_width = grid.len();
     let grid_height = grid[0].len();
 
@@ -23,10 +25,11 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     let mut closed = vec![vec![false; grid_height]; grid_width];
 
     // Create a open list to hold potential points of the path.
-    let mut open: Vec<Point> = Vec::with_capacity(grid_width * grid_height);
+    let mut open = HashSet::new();
 
     // Put the starting point on the open list.
-    open.push(start);
+    open.insert(start);
+    f_list[start_x][start_y] = 0;
 
     // Pop the point with the lowest f value off the open list.
     while let Some(p) = get_lowest_f(&mut open, &f_list) {
@@ -35,10 +38,9 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
         // Push it on the closed list.
         closed[x][y] = true;
 
-        // Calculate all valid successors for that point.
-        let successors = generate_successors(p, grid);
-        for s in successors.into_iter() {
-            let (s_x, s_y) = s;
+        // Go through all valid successors for that point.
+        for s in generate_successors(p, grid).iter() {
+            let (s_x, s_y) = *s;
 
             // If the successor is already on the closed list, ignore it.
             if closed[s_x][s_y] {
@@ -46,17 +48,17 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
             }
 
             // If successor is the target, stop and generate the path.
-            if s == target {
+            if *s == target {
                 parents[s_x][s_y] = Some(p);
-                return generate_path(s, &parents);
+                return generate_path(*s, &parents);
             }
 
             // Compute g,h and f for the successor.
             let g = g_list[x][y] + 1;
-            let h = manhatten_distance(s, target);
+            let h = manhatten_distance(*s, target);
             let f = g + h;
 
-            // If the f value is lower than what we currently have for the position.
+            // If the known f value is lower than what we currently have for the position.
             if f < f_list[s_x][s_y] {
                 // Update the details of this position with the values of the successor.
                 g_list[s_x][s_y] = g;
@@ -64,7 +66,7 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
                 parents[s_x][s_y] = Some(p);
 
                 // And push it on the open list.
-                open.push(s);
+                open.insert(*s);
             }
         }
     }
@@ -82,21 +84,20 @@ pub fn solve(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
 }
 
 // Finds the point with the lowest f value in the list and returns it.
-fn get_lowest_f(list: &mut Vec<Point>, f_list: &[Vec<i32>]) -> Option<Point> {
-    if list.is_empty() {
-        return None;
-    }
-
+fn get_lowest_f(list: &mut HashSet<Point>, f_list: &[Vec<i32>]) -> Option<Point> {
     let mut lowest_f = i32::MAX;
-    let mut i = 0;
-    for (n, (x, y)) in list.iter().enumerate() {
+    let mut res: Option<Point> = None;
+    for (x, y) in list.iter() {
         let f = f_list[*x][*y];
         if f < lowest_f {
             lowest_f = f;
-            i = n;
+            res = Some((*x, *y));
         }
     }
-    Some(list.swap_remove(i))
+    if let Some(p) = res {
+        list.remove(&p);
+    }
+    res
 }
 
 // Generates all valid successors of a point.
@@ -110,30 +111,27 @@ fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
     let grid_width = grid.len();
     let grid_height = grid[0].len();
 
-    let mut result: Vec<Point> = Vec::with_capacity(4);
+    let mut successors: Vec<Point> = Vec::with_capacity(4);
     let (x, y) = p;
 
     // north
-    if x > 0 {
-        result.push((x - 1, y));
+    if x > 0 && free_tile(grid, (x - 1, y)) {
+        successors.push((x - 1, y));
     }
     // south
-    if x + 1 < grid_width {
-        result.push((x + 1, y));
+    if x + 1 < grid_width && free_tile(grid, (x + 1, y)) {
+        successors.push((x + 1, y));
     }
     // east
-    if y + 1 < grid_height {
-        result.push((x, y + 1));
+    if y + 1 < grid_height && free_tile(grid, (x, y + 1)) {
+        successors.push((x, y + 1));
     }
     // west
-    if y > 0 {
-        result.push((x, y - 1))
+    if y > 0 && free_tile(grid, (x, y - 1)) {
+        successors.push((x, y - 1))
     }
 
-    result
-        .into_iter()
-        .filter(|(x, y)| grid[*x][*y] == Tile::Free || grid[*x][*y] == Tile::Food)
-        .collect()
+    successors
 }
 
 // Generates the path from the starting point to the target as a vector of directions.
@@ -177,6 +175,11 @@ fn manhatten_distance(from: Point, to: Point) -> i32 {
     dx + dy
 }
 
+fn free_tile(grid: &Grid, p: Point) -> bool {
+    let (x, y) = p;
+    grid[x][y] == Tile::Free || grid[x][y] == Tile::Food
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -188,21 +191,6 @@ mod tests {
         assert_eq!(
             solve(&grid, (0, 0), (2, 0)),
             vec![Direction::East, Direction::East]
-        )
-    }
-
-    #[test]
-    fn solve_path_diagonal() {
-        let mut grid = vec![vec![Tile::Free; 3]; 3];
-        grid[2][2] = Tile::Food;
-        assert_eq!(
-            solve(&grid, (0, 0), (2, 2)),
-            vec![
-                Direction::East,
-                Direction::South,
-                Direction::South,
-                Direction::East,
-            ]
         )
     }
 
