@@ -38,9 +38,14 @@ pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
         // Push it on the closed list.
         closed[x][y] = true;
 
-        // Go through all valid successors for that point.
+        // Go through all successors for that point.
         for s in generate_successors(p, grid).iter() {
             let (s_x, s_y) = *s;
+
+            // Skip blocked tiles.
+            if blocked_tile(grid, *s) {
+                continue;
+            }
 
             // If the successor is already on the closed list, ignore it.
             if closed[s_x][s_y] {
@@ -106,7 +111,6 @@ fn get_lowest_f(list: &mut HashSet<Point>, f_list: &[Vec<i32>]) -> Option<Point>
 //      W--Point--E
 //           |
 //           S
-// Successors are excluded if they are outside the grid or if the tiles are not Free or Food.
 fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
     let grid_width = grid.len();
     let grid_height = grid[0].len();
@@ -115,19 +119,19 @@ fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
     let (x, y) = p;
 
     // north
-    if x > 0 && free_tile(grid, (x - 1, y)) {
+    if x > 0 {
         successors.push((x - 1, y));
     }
     // south
-    if x + 1 < grid_width && free_tile(grid, (x + 1, y)) {
+    if x + 1 < grid_width {
         successors.push((x + 1, y));
     }
     // east
-    if y + 1 < grid_height && free_tile(grid, (x, y + 1)) {
+    if y + 1 < grid_height {
         successors.push((x, y + 1));
     }
     // west
-    if y > 0 && free_tile(grid, (x, y - 1)) {
+    if y > 0 {
         successors.push((x, y - 1))
     }
 
@@ -175,9 +179,9 @@ fn manhatten_distance(from: Point, to: Point) -> i32 {
     dx + dy
 }
 
-fn free_tile(grid: &Grid, p: Point) -> bool {
+fn blocked_tile(grid: &Grid, p: Point) -> bool {
     let (x, y) = p;
-    grid[x][y] == Tile::Free || grid[x][y] == Tile::Food
+    grid[x][y] != Tile::Free && grid[x][y] != Tile::Food
 }
 
 #[cfg(test)]
