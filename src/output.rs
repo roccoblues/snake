@@ -8,7 +8,7 @@ use crossterm::{cursor, execute, style};
 use std::io::stdout;
 
 pub const MIN_GRID_WIDTH: u16 = 12;
-pub const MIN_GRID_HEIGHT: u16 = 10;
+pub const MIN_GRID_HEIGHT: u16 = 11;
 
 pub struct Screen {
     grid_width: u16,
@@ -25,7 +25,7 @@ impl Screen {
         // Calculate x and y adjustment needed to center the grid on screen.
         let (cols, rows) = size().unwrap();
         let x_adjust = (cols - grid_width * 2) / 2;
-        let y_adjust = (rows - grid_height) / 2;
+        let y_adjust = (rows - grid_height + 1) / 2;
 
         Screen {
             grid_width,
@@ -98,7 +98,7 @@ pub fn max_grid_width() -> u16 {
 
 pub fn max_grid_height() -> u16 {
     let (_, rows) = size().unwrap();
-    rows
+    rows - 1
 }
 
 pub fn init() {
