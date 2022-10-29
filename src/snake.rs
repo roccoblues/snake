@@ -61,6 +61,20 @@ pub fn random_direction() -> Direction {
     Direction::from_int(thread_rng().gen_range(0..=3) as u8).unwrap()
 }
 
+pub fn snake_direction(snake: &Snake) -> Direction {
+    let (x, y) = snake.front().unwrap();
+    let (i, j) = snake.get(1).unwrap();
+    if x > i {
+        Direction::East
+    } else if x < i {
+        Direction::West
+    } else if y > j {
+        Direction::South
+    } else {
+        Direction::North
+    }
+}
+
 // Returns the next point in the given direction.
 pub fn next_point(p: Point, direction: Direction) -> Point {
     let (x, y) = p;

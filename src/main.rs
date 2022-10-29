@@ -2,7 +2,7 @@ use clap::Parser;
 use config::Config;
 use input::Input;
 use output::Screen;
-use snake::{create_grid, spawn_food, spawn_obstacles, spawn_snake};
+use snake::{create_grid, snake_direction, spawn_food, spawn_obstacles, spawn_snake};
 use std::sync::atomic::{self, AtomicU16};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
@@ -69,7 +69,8 @@ fn main() {
             Input::ChangeDirection(d) => {
                 // The snake can't reverse direction. So if the new direction is the opposite
                 // of the current one we discard it.
-                if d != direction.opposite() {
+                let current_direction = snake_direction(&snake);
+                if d != current_direction.opposite() {
                     direction = d;
                 }
             }
