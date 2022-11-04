@@ -1,5 +1,5 @@
+use crate::snake::next_point;
 use crate::types::{Direction, Grid, Point, Tile};
-use rand::prelude::*;
 use std::collections::HashSet;
 
 // Calculates a path from the start position to the target on the grid using the A* Search Algorithm.
@@ -77,11 +77,10 @@ pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     }
     // If we reach this point we couldn't find a clear path.
 
-    // If we have valid successors we simply pick a random one.
+    // If we have valid successors we pick the one with the longest straight path.
     let successors = generate_successors(start, grid);
     if !successors.is_empty() {
-        let next = successors[thread_rng().gen_range(0..successors.len()) as usize];
-        return vec![get_direction(start, next)];
+        return vec![longest_straight_path(grid, start, &successors)];
     }
 
     // No valid successors left, brace for impact!
@@ -155,6 +154,25 @@ fn generate_path(target: Point, parents: &[Vec<Option<Point>>]) -> Vec<Direction
         }
     }
     directions
+}
+
+fn longest_straight_path(grid: &Grid, start: Point, successors: &Vec<Point>) -> Direction {
+    let mut direction = Direction::North;
+    let mut count = 0;
+    for p in successors {
+        let d = get_direction(start, *p);
+        let mut n = *p;
+        let mut c = 0;
+        while !blocked_tile(grid, n) {
+            c += 1;
+            n = next_point(n, d);
+        }
+        if c > count {
+            count = c;
+            direction = d;
+        }
+    }
+    direction
 }
 
 fn get_direction(from: Point, to: Point) -> Direction {
@@ -233,6 +251,19 @@ mod tests {
                 Direction::North,
                 Direction::North,
             ]
+        )
+    }
+
+    #[test]
+    fn longest_straight_path_east() {
+        let mut grid = vec![vec![Tile::Free; 9]; 9];
+        grid[4][3] = Tile::Obstacle;
+        grid[6][4] = Tile::Obstacle;
+        grid[4][7] = Tile::Obstacle;
+        grid[0][4] = Tile::Obstacle;
+        assert_eq!(
+            longest_straight_path(&grid, (4, 4), &vec![(5, 4), (4, 5), (3, 4)]),
+            Direction::West
         )
     }
 }
