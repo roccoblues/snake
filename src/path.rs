@@ -77,10 +77,10 @@ pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     }
     // If we reach this point we couldn't find a clear path.
 
-    // If we have valid successors we pick the one with the longest straight path.
+    // If we have valid successors we pick the one with the longest free straight path.
     let successors = generate_successors(start, grid);
     if !successors.is_empty() {
-        return vec![longest_straight_path(grid, start, &successors)];
+        return vec![best_straight_path_direction(grid, start, &successors)];
     }
 
     // No valid successors left, brace for impact!
@@ -156,7 +156,7 @@ fn generate_path(target: Point, parents: &[Vec<Option<Point>>]) -> Vec<Direction
     directions
 }
 
-fn longest_straight_path(grid: &Grid, start: Point, successors: &Vec<Point>) -> Direction {
+fn best_straight_path_direction(grid: &Grid, start: Point, successors: &Vec<Point>) -> Direction {
     let mut direction = Direction::North;
     let mut count = 0;
     for p in successors {
@@ -255,14 +255,14 @@ mod tests {
     }
 
     #[test]
-    fn longest_straight_path_east() {
+    fn best_straight_path_east() {
         let mut grid = vec![vec![Tile::Free; 9]; 9];
         grid[4][3] = Tile::Obstacle;
         grid[6][4] = Tile::Obstacle;
         grid[4][7] = Tile::Obstacle;
         grid[0][4] = Tile::Obstacle;
         assert_eq!(
-            longest_straight_path(&grid, (4, 4), &vec![(5, 4), (4, 5), (3, 4)]),
+            best_straight_path_direction(&grid, (4, 4), &vec![(5, 4), (4, 5), (3, 4)]),
             Direction::West
         )
     }
