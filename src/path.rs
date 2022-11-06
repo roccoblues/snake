@@ -75,16 +75,10 @@ pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
             }
         }
     }
+
     // If we reach this point we couldn't find a clear path.
-
-    // If we have valid successors we pick the one with the longest free straight path.
-    let successors = generate_successors(start, grid);
-    if !successors.is_empty() {
-        return vec![best_straight_path_direction(grid, start, &successors)];
-    }
-
-    // No valid successors left, brace for impact!
-    vec![]
+    // We fallback to to longest free straight path.
+    best_straight_path(grid, start)
 }
 
 // Finds the point with the lowest f value in the list and returns it.
@@ -156,12 +150,12 @@ fn generate_path(target: Point, parents: &[Vec<Option<Point>>]) -> Vec<Direction
     directions
 }
 
-fn best_straight_path_direction(grid: &Grid, start: Point, successors: &Vec<Point>) -> Direction {
-    let mut direction = Direction::North;
+fn best_straight_path(grid: &Grid, start: Point) -> Vec<Direction> {
+    let mut direction = None;
     let mut count = 0;
-    for p in successors {
-        let d = get_direction(start, *p);
-        let mut n = *p;
+    for p in generate_successors(start, grid) {
+        let d = get_direction(start, p);
+        let mut n = p;
         let mut c = 0;
         while !blocked_tile(grid, n) {
             c += 1;
@@ -169,10 +163,13 @@ fn best_straight_path_direction(grid: &Grid, start: Point, successors: &Vec<Poin
         }
         if c > count {
             count = c;
-            direction = d;
+            direction = Some(d);
         }
     }
-    direction
+    match direction {
+        Some(d) => vec![d],
+        None => Vec::new(),
+    }
 }
 
 fn get_direction(from: Point, to: Point) -> Direction {
@@ -255,15 +252,20 @@ mod tests {
     }
 
     #[test]
+    fn best_straight_path_none() {
+        let mut grid = vec![vec![Tile::Free; 3]; 3];
+        grid[0][1] = Tile::Obstacle;
+        grid[1][0] = Tile::Obstacle;
+        assert_eq!(best_straight_path(&grid, (0, 0)), vec![])
+    }
+
+    #[test]
     fn best_straight_path_east() {
         let mut grid = vec![vec![Tile::Free; 9]; 9];
         grid[4][3] = Tile::Obstacle;
         grid[6][4] = Tile::Obstacle;
         grid[4][7] = Tile::Obstacle;
         grid[0][4] = Tile::Obstacle;
-        assert_eq!(
-            best_straight_path_direction(&grid, (4, 4), &vec![(5, 4), (4, 5), (3, 4)]),
-            Direction::West
-        )
+        assert_eq!(best_straight_path(&grid, (4, 4)), vec![Direction::West])
     }
 }
