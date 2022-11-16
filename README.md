@@ -16,7 +16,7 @@ Game of snake
 Usage: snake [OPTIONS]
 
 Options:
-  -i, --interval <INTERVAL>        Snake advance interval in ms [default: 200]
+  -i, --interval <INTERVAL>        Snake advance interval in ms [default: 175]
   -w, --grid-width <GRID_WIDTH>    Width of the grid [default: 20]
   -h, --grid-height <GRID_HEIGHT>  Height of the grid [default: 15]
   -f, --fit-grid                   Fit the grid to the screen
