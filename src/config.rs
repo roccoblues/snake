@@ -1,21 +1,27 @@
 use crate::output;
 use clap::{ArgAction, Parser};
 
+pub const MIN_INTERVAL: i64 = 30;
+
 /// Game of snake
 #[derive(Parser)]
 #[command(disable_help_flag = true)]
 pub struct Config {
     /// Snake advance interval in ms
-    #[arg(short, long, default_value_t = 200, value_parser = clap::value_parser!(u16).range(40..300))]
+    #[arg(short, long, default_value_t = 175, value_parser = clap::value_parser!(u16).range(MIN_INTERVAL..300))]
     pub interval: u16,
 
     /// Width of the grid
-    #[arg(short = 'w', long, default_value_t = 20, value_parser = grid_width_in_range)]
+    #[arg(short = 'w', long, default_value_t = 20, conflicts_with = "fit_grid", value_parser = grid_width_in_range)]
     pub grid_width: u16,
 
     /// Height of the grid
-    #[arg(short = 'h', long, default_value_t = 15, value_parser = grid_height_in_range)]
+    #[arg(short = 'h', long, default_value_t = 15, conflicts_with = "fit_grid", value_parser = grid_height_in_range)]
     pub grid_height: u16,
+
+    /// Fit the grid to the screen
+    #[arg(short = 'f', long, default_value_t = false)]
+    pub fit_grid: bool,
 
     /// Don't draw obstacles on the grid
     #[arg(short = 'n', long, default_value_t = false)]
@@ -36,7 +42,7 @@ pub struct Config {
 
 fn grid_width_in_range(s: &str) -> Result<u16, String> {
     let width: u16 = s.parse().map_err(|_| format!("`{}` isn't a number", s))?;
-    let max = output::max_grid_width();
+    let (max, _) = output::max_grid_size();
     if (output::MIN_GRID_WIDTH..=max).contains(&width) {
         Ok(width)
     } else {
@@ -50,7 +56,7 @@ fn grid_width_in_range(s: &str) -> Result<u16, String> {
 
 fn grid_height_in_range(s: &str) -> Result<u16, String> {
     let height: u16 = s.parse().map_err(|_| format!("`{}` isn't a number", s))?;
-    let max = output::max_grid_height();
+    let (_, max) = output::max_grid_size();
     if (output::MIN_GRID_HEIGHT..=max).contains(&height) {
         Ok(height)
     } else {

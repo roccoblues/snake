@@ -19,6 +19,7 @@ Options:
   -i, --interval <INTERVAL>        Snake advance interval in ms [default: 200]
   -w, --grid-width <GRID_WIDTH>    Width of the grid [default: 20]
   -h, --grid-height <GRID_HEIGHT>  Height of the grid [default: 15]
+  -f, --fit-grid                   Fit the grid to the screen
   -n, --no-obstacles               Don't draw obstacles on the grid
       --autopilot                  The computer controls the snake
       --arcade                     The snake gets faster with every food eaten
@@ -41,9 +42,9 @@ Options:
 
 - [ ] option to restart without exiting
 - [ ] countdown before start
-- [ ] cli option to fit grid to terminal
 - [ ] release binaries
 - [ ] multiple snakes
+- [x] cli option to fit grid to terminal
 - [x] path: open list should be a set
 - [x] github action with test + clippy
 - [x] separate grid width / height

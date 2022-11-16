@@ -23,14 +23,19 @@ fn main() {
     env_logger::init();
     output::init();
 
-    let screen = Screen::new(config.grid_width, config.grid_height);
+    let mut grid_width = config.grid_width;
+    let mut grid_height = config.grid_height;
+    if config.fit_grid {
+        (grid_width, grid_height) = output::max_grid_size();
+    }
+    let screen = Screen::new(grid_width, grid_height);
 
     let mut end = false;
     let mut paused = false;
     let mut steps = 0;
-    let obstacle_count = config.grid_width * config.grid_height / 25;
+    let obstacle_count = grid_width * grid_height / 25;
 
-    let mut grid = create_grid(config.grid_width.into(), config.grid_height.into());
+    let mut grid = create_grid(grid_width.into(), grid_height.into());
     let mut snake = spawn_snake(&mut grid);
     let mut food = spawn_food(&mut grid);
     if !config.no_obstacles {
@@ -158,7 +163,7 @@ fn increase_interval(interval: &Arc<AtomicU16>) {
 
 fn decrease_interval(interval: &Arc<AtomicU16>) {
     let i = interval.load(atomic::Ordering::Relaxed);
-    if i > 45 {
+    if i - 5 > config::MIN_INTERVAL as u16 {
         interval.store(i - 5, atomic::Ordering::Relaxed);
     }
 }

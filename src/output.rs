@@ -22,6 +22,8 @@ impl Screen {
         // We use two characters to represent a tile. So we need to make sure to double
         // the x value when we actually draw the grid.
 
+        println!("{},{}", grid_width, grid_height);
+
         // Calculate x and y adjustment needed to center the grid on screen.
         let (cols, rows) = size().unwrap();
         let x_adjust = (cols - grid_width * 2) / 2;
@@ -91,14 +93,9 @@ fn tile_to_symbol(tile: Tile) -> StyledContent<&'static str> {
     }
 }
 
-pub fn max_grid_width() -> u16 {
-    let (cols, _) = size().unwrap();
-    cols / 2
-}
-
-pub fn max_grid_height() -> u16 {
-    let (_, rows) = size().unwrap();
-    rows - 1
+pub fn max_grid_size() -> (u16, u16) {
+    let (cols, rows) = size().unwrap();
+    (cols / 2, rows - 1)
 }
 
 pub fn init() {
