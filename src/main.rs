@@ -79,7 +79,30 @@ fn main() {
                     direction = d;
                 }
             }
-            Input::Pause => paused ^= true,
+            Input::Pause => {
+                if end {
+                    // restart game
+                    interval.store(config.interval, atomic::Ordering::Relaxed);
+                    end = false;
+                    paused = false;
+                    steps = 0;
+                    grid = create_grid(grid_width.into(), grid_height.into());
+                    snake = spawn_snake(&mut grid);
+                    food = spawn_food(&mut grid);
+                    if !config.no_obstacles {
+                        spawn_obstacles(&mut grid, obstacle_count);
+                    }
+                    screen.reset();
+                    screen.draw_grid(&grid);
+                    screen.draw_steps(steps);
+                    screen.draw_length(snake.len());
+                    direction = snake::random_direction();
+                    path = Vec::new();
+                    continue;
+                }
+                // pause / resume
+                paused ^= true
+            }
             Input::DecreaseSpeed => {
                 if !config.arcade {
                     increase_interval(&interval);

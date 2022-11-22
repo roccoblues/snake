@@ -29,7 +29,7 @@ Options:
 ### Keybindings
 
 * _ESC_ or _q_ to quit
-* _SPACE_ to pause
+* _SPACE_ to pause/resume and restart
 * Arrow keys to steer the snake when not in autopilot mode
 * _+_/_-_ to increase / decrease speed when not in arcade mode
 
@@ -40,7 +40,6 @@ Options:
 
 ## TODO
 
-- [ ] option to restart without exiting
 - [ ] countdown before start
 - [ ] release binaries
 - [ ] multiple snakes

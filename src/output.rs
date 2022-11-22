@@ -78,6 +78,15 @@ impl Screen {
         )
         .unwrap()
     }
+
+    pub fn reset(&self) {
+        execute!(
+            stdout(),
+            cursor::MoveTo(self.x_adjust, self.y_adjust - 1),
+            Print(format!("{: <1$}", "", self.grid_width as usize * 2)),
+        )
+        .unwrap();
+    }
 }
 
 // Returns the actual characters to be drawn for the given tile.
