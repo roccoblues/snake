@@ -22,8 +22,6 @@ impl Screen {
         // We use two characters to represent a tile. So we need to make sure to double
         // the x value when we actually draw the grid.
 
-        println!("{},{}", grid_width, grid_height);
-
         // Calculate x and y adjustment needed to center the grid on screen.
         let (cols, rows) = size().unwrap();
         let x_adjust = (cols - grid_width * 2) / 2;
