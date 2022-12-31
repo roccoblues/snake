@@ -10,7 +10,7 @@ use game::{
 };
 use input::Input;
 use output::Screen;
-use types::{Direction, Grid, Tile};
+use types::{Direction, Grid, Tile, Snake};
 
 mod cli;
 mod game;
@@ -46,8 +46,8 @@ fn main() {
 
     let mut screen = Screen::new(grid_width, grid_height);
     draw_grid(&screen, &grid);
-    screen.draw_text_left(format!("Steps: {}", steps));
-    screen.draw_text_right(format!("Snake length: {}", snake.len()));
+    draw_steps(&screen, steps);
+    draw_snake_len(&screen, &snake);
 
     let (tx, rx) = channel();
 
@@ -87,8 +87,8 @@ fn main() {
                     }
                     screen = Screen::new(grid_width, grid_height);
                     draw_grid(&screen, &grid);
-                    screen.draw_text_left(format!("Steps: {}", steps));
-                    screen.draw_text_right(format!("Snake length: {}", snake.len()));
+                    draw_steps(&screen, steps);
+                    draw_snake_len(&screen, &snake);
                     direction = random_direction();
                     path = Vec::new();
                     continue;
@@ -143,7 +143,7 @@ fn main() {
                         screen.draw_tile(p, Tile::Snake);
                         food = spawn_food(&mut grid);
                         screen.draw_tile(food, Tile::Food);
-                        screen.draw_text_left(format!("Steps: {}", steps));
+                        draw_steps(&screen, steps);
                         // In arcade mode we decrease the tick interval with every food eaten
                         // to make the game faster.
                         if options.arcade {
@@ -164,7 +164,7 @@ fn main() {
                 }
 
                 steps += 1;
-                screen.draw_text_left(format!("Steps: {}", steps));
+                draw_steps(&screen, steps);
             }
         }
     }
@@ -190,6 +190,14 @@ fn draw_grid(screen: &Screen, grid: &Grid) {
             screen.draw_tile((x, y), grid[x][y])
         }
     }
+}
+
+fn draw_steps(screen: &Screen, steps: u16) {
+    screen.draw_text_left(format!("Steps: {}", steps));
+}
+
+fn draw_snake_len(screen: &Screen, snake: &Snake) {
+    screen.draw_text_right(format!("Snake length: {}", snake.len()));
 }
 
 fn send_ticks(tx: Sender<Input>, interval: Arc<AtomicU16>) {
