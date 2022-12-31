@@ -6,7 +6,7 @@ pub const MIN_INTERVAL: i64 = 30;
 /// Game of snake
 #[derive(Parser)]
 #[command(disable_help_flag = true)]
-pub struct Config {
+pub struct Options {
     /// Snake advance interval in ms
     #[arg(short, long, default_value_t = 175, value_parser = clap::value_parser!(u16).range(MIN_INTERVAL..300))]
     pub interval: u16,
@@ -38,6 +38,10 @@ pub struct Config {
     /// Print help information
     #[arg(long = "help", action = ArgAction::Help, value_parser = clap::value_parser!(bool))]
     pub help: (),
+}
+
+pub fn parse_options() -> Options {
+    Options::parse()
 }
 
 fn grid_width_in_range(s: &str) -> Result<u16, String> {

@@ -1,5 +1,3 @@
-use clap::Parser;
-use config::Config;
 use input::Input;
 use output::Screen;
 use snake::{create_grid, snake_direction, spawn_food, spawn_obstacles, spawn_snake};
@@ -10,7 +8,7 @@ use std::thread;
 use std::time::Duration;
 use types::{Direction, Tile};
 
-mod config;
+mod cli;
 mod input;
 mod output;
 mod path;
@@ -18,14 +16,14 @@ mod snake;
 mod types;
 
 fn main() {
-    let config = Config::parse();
+    let options = cli::parse_options();
 
     env_logger::init();
     output::init();
 
-    let mut grid_width = config.grid_width;
-    let mut grid_height = config.grid_height;
-    if config.fit_grid {
+    let mut grid_width = options.grid_width;
+    let mut grid_height = options.grid_height;
+    if options.fit_grid {
         (grid_width, grid_height) = output::max_grid_size();
     }
     let screen = Screen::new(grid_width, grid_height);
@@ -38,7 +36,7 @@ fn main() {
     let mut grid = create_grid(grid_width.into(), grid_height.into());
     let mut snake = spawn_snake(&mut grid);
     let mut food = spawn_food(&mut grid);
-    if !config.no_obstacles {
+    if !options.no_obstacles {
         spawn_obstacles(&mut grid, obstacle_count);
     }
 
@@ -55,7 +53,7 @@ fn main() {
     });
 
     // Spawn thread to send ticks.
-    let interval = Arc::new(atomic::AtomicU16::new(config.interval));
+    let interval = Arc::new(atomic::AtomicU16::new(options.interval));
     let int_clone = Arc::clone(&interval);
     thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(
@@ -82,14 +80,14 @@ fn main() {
             Input::Pause => {
                 if end {
                     // restart game
-                    interval.store(config.interval, atomic::Ordering::Relaxed);
+                    interval.store(options.interval, atomic::Ordering::Relaxed);
                     end = false;
                     paused = false;
                     steps = 0;
                     grid = create_grid(grid_width.into(), grid_height.into());
                     snake = spawn_snake(&mut grid);
                     food = spawn_food(&mut grid);
-                    if !config.no_obstacles {
+                    if !options.no_obstacles {
                         spawn_obstacles(&mut grid, obstacle_count);
                     }
                     screen.reset();
@@ -104,12 +102,12 @@ fn main() {
                 paused ^= true
             }
             Input::DecreaseSpeed => {
-                if !config.arcade {
+                if !options.arcade {
                     increase_interval(&interval);
                 }
             }
             Input::IncreaseSpeed => {
-                if !config.arcade {
+                if !options.arcade {
                     decrease_interval(&interval);
                 }
             }
@@ -121,7 +119,7 @@ fn main() {
                 let head = snake.front().unwrap();
 
                 // In autopilot mode calculate the path to the food as a list of directions.
-                if config.autopilot {
+                if options.autopilot {
                     if path.is_empty() {
                         path = path::find(&grid, *head, food);
                     }
@@ -153,7 +151,7 @@ fn main() {
                         screen.draw_length(snake.len());
                         // In arcade mode we decrease the tick interval with every food eaten
                         // to make the game faster.
-                        if config.arcade {
+                        if options.arcade {
                             decrease_interval(&interval);
                         }
                     }
@@ -186,7 +184,7 @@ fn increase_interval(interval: &Arc<AtomicU16>) {
 
 fn decrease_interval(interval: &Arc<AtomicU16>) {
     let i = interval.load(atomic::Ordering::Relaxed);
-    if i - 5 > config::MIN_INTERVAL as u16 {
+    if i - 5 > cli::MIN_INTERVAL as u16 {
         interval.store(i - 5, atomic::Ordering::Relaxed);
     }
 }
