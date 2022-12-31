@@ -19,6 +19,9 @@ pub struct Screen {
 
 impl Screen {
     pub fn new(grid_width: u16, grid_height: u16) -> Self {
+        // Make sure we start with a blank screen.
+        execute!(stdout(), Clear(ClearType::All),).unwrap();
+
         // We use two characters to represent a tile. So we need to make sure to double
         // the x value when we actually draw the grid.
 
@@ -78,15 +81,6 @@ impl Screen {
         )
         .unwrap()
     }
-
-    pub fn reset(&self) {
-        execute!(
-            stdout(),
-            cursor::MoveTo(self.x_adjust, self.y_adjust - 1),
-            Print(format!("{: <1$}", "", self.grid_width as usize * 2)),
-        )
-        .unwrap();
-    }
 }
 
 // Returns the actual characters to be drawn for the given tile.
@@ -107,13 +101,7 @@ pub fn max_grid_size() -> (u16, u16) {
 
 pub fn init() {
     enable_raw_mode().unwrap();
-    execute!(
-        stdout(),
-        EnterAlternateScreen,
-        Clear(ClearType::All),
-        cursor::Hide,
-    )
-    .unwrap();
+    execute!(stdout(), EnterAlternateScreen, cursor::Hide,).unwrap();
 }
 
 pub fn reset() {

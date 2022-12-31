@@ -25,7 +25,7 @@ fn main() {
     if options.fit_grid {
         (grid_width, grid_height) = output::max_grid_size();
     }
-    let screen = Screen::new(grid_width, grid_height);
+    let mut screen = Screen::new(grid_width, grid_height);
 
     let mut end = false;
     let mut paused = false;
@@ -52,7 +52,7 @@ fn main() {
     });
 
     // Spawn thread to send ticks.
-    let interval = Arc::new(atomic::AtomicU16::new(options.interval));
+    let interval = Arc::new(AtomicU16::new(options.interval));
     let int_clone = Arc::clone(&interval);
     thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(
@@ -89,7 +89,7 @@ fn main() {
                     if !options.no_obstacles {
                         spawn_obstacles(&mut grid, obstacle_count);
                     }
-                    screen.reset();
+                    screen = Screen::new(grid_width, grid_height);
                     screen.draw_grid(&grid);
                     screen.draw_steps(steps);
                     screen.draw_length(snake.len());
