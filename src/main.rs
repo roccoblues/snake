@@ -18,7 +18,6 @@ mod types;
 fn main() {
     let options = cli::parse_options();
 
-    env_logger::init();
     output::init();
 
     let mut grid_width = options.grid_width;
