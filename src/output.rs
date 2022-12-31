@@ -1,9 +1,6 @@
-use crate::types::{Grid, Point, Tile};
+use crate::types::{Point, Tile};
 use crossterm::style::{Attribute, Print, StyledContent, Stylize};
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, size, Clear, ClearType, EnterAlternateScreen,
-    LeaveAlternateScreen,
-};
+use crossterm::terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::{cursor, execute, style};
 use std::io::stdout;
 
@@ -11,61 +8,48 @@ pub const MIN_GRID_WIDTH: u16 = 12;
 pub const MIN_GRID_HEIGHT: u16 = 11;
 
 pub struct Screen {
-    grid_width: u16,
-    grid_height: u16,
+    width: u16,
     x_adjust: u16,
     y_adjust: u16,
 }
 
 impl Screen {
-    pub fn new(grid_width: u16, grid_height: u16) -> Self {
-        // Make sure we start with a blank screen.
-        execute!(stdout(), Clear(ClearType::All),).unwrap();
-
+    pub fn new(width: u16, height: u16) -> Self {
         // We use two characters to represent a tile. So we need to make sure to double
         // the x value when we actually draw the grid.
 
+        // Make sure we start with a blank screen.
+        execute!(stdout(), Clear(ClearType::All),).unwrap();
+
         // Calculate x and y adjustment needed to center the grid on screen.
-        let (cols, rows) = size().unwrap();
-        let x_adjust = (cols - grid_width * 2) / 2;
-        let y_adjust = (rows - grid_height + 1) / 2;
+        let (cols, rows) = terminal::size().unwrap();
+        let x_adjust = (cols - width * 2) / 2;
+        let y_adjust = (rows - height + 1) / 2;
 
         Screen {
-            grid_width,
-            grid_height,
+            width,
             x_adjust,
             y_adjust,
         }
     }
 
-    pub fn draw_grid(&self, grid: &Grid) {
-        for x in 0..self.grid_width {
-            for y in 0..self.grid_height {
-                let x = x as usize;
-                let y = y as usize;
-                self.draw_tile((x, y), grid[x][y])
-            }
-        }
-    }
-
-    pub fn draw_steps(&self, steps: u32) {
+    pub fn draw_text_left(&self, str: String) {
         execute!(
             stdout(),
             cursor::MoveTo(self.x_adjust, self.y_adjust - 1),
-            Print(format!("Steps: {}", steps)),
+            Print(str),
         )
         .unwrap();
     }
 
-    pub fn draw_length(&self, length: usize) {
-        let len_str = format!("Snake length: {}", length);
+    pub fn draw_text_right(&self, str: String) {
         execute!(
             stdout(),
             cursor::MoveTo(
-                self.x_adjust + self.grid_width * 2 - len_str.chars().count() as u16,
+                self.x_adjust + self.width * 2 - str.chars().count() as u16,
                 self.y_adjust - 1
             ),
-            Print(len_str),
+            Print(str),
         )
         .unwrap()
     }
@@ -95,16 +79,16 @@ fn tile_to_symbol(tile: Tile) -> StyledContent<&'static str> {
 }
 
 pub fn max_grid_size() -> (u16, u16) {
-    let (cols, rows) = size().unwrap();
+    let (cols, rows) = terminal::size().unwrap();
     (cols / 2, rows - 1)
 }
 
 pub fn init() {
-    enable_raw_mode().unwrap();
+    terminal::enable_raw_mode().unwrap();
     execute!(stdout(), EnterAlternateScreen, cursor::Hide,).unwrap();
 }
 
 pub fn reset() {
     execute!(stdout(), cursor::Show, LeaveAlternateScreen).unwrap();
-    disable_raw_mode().unwrap();
+    terminal::disable_raw_mode().unwrap();
 }

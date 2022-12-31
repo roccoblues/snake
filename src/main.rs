@@ -6,7 +6,7 @@ use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use types::{Direction, Tile};
+use types::{Direction, Grid, Tile};
 
 mod cli;
 mod input;
@@ -39,9 +39,9 @@ fn main() {
         spawn_obstacles(&mut grid, obstacle_count);
     }
 
-    screen.draw_grid(&grid);
-    screen.draw_steps(steps);
-    screen.draw_length(snake.len());
+    draw_grid(&screen, &grid);
+    screen.draw_text_left(format!("Steps: {}", steps));
+    screen.draw_text_right(format!("Snake length: {}", snake.len()));
 
     let (tx, rx) = channel();
 
@@ -90,9 +90,9 @@ fn main() {
                         spawn_obstacles(&mut grid, obstacle_count);
                     }
                     screen = Screen::new(grid_width, grid_height);
-                    screen.draw_grid(&grid);
-                    screen.draw_steps(steps);
-                    screen.draw_length(snake.len());
+                    draw_grid(&screen, &grid);
+                    screen.draw_text_left(format!("Steps: {}", steps));
+                    screen.draw_text_right(format!("Snake length: {}", snake.len()));
                     direction = snake::random_direction();
                     path = Vec::new();
                     continue;
@@ -147,7 +147,7 @@ fn main() {
                         screen.draw_tile(p, Tile::Snake);
                         food = spawn_food(&mut grid);
                         screen.draw_tile(food, Tile::Food);
-                        screen.draw_length(snake.len());
+                        screen.draw_text_left(format!("Steps: {}", steps));
                         // In arcade mode we decrease the tick interval with every food eaten
                         // to make the game faster.
                         if options.arcade {
@@ -168,7 +168,7 @@ fn main() {
                 }
 
                 steps += 1;
-                screen.draw_steps(steps);
+                screen.draw_text_left(format!("Steps: {}", steps));
             }
         }
     }
@@ -185,5 +185,13 @@ fn decrease_interval(interval: &Arc<AtomicU16>) {
     let i = interval.load(atomic::Ordering::Relaxed);
     if i - 5 > cli::MIN_INTERVAL as u16 {
         interval.store(i - 5, atomic::Ordering::Relaxed);
+    }
+}
+
+fn draw_grid(screen: &Screen, grid: &Grid) {
+    for x in 0..grid.len() {
+        for y in 0..grid[0].len() {
+            screen.draw_tile((x, y), grid[x][y])
+        }
     }
 }
