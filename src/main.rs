@@ -1,8 +1,6 @@
 use std::sync::atomic::{self, AtomicU16};
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc;
 use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
 
 use game::{
     create_grid, next_point, random_direction, snake_direction, spawn_food, spawn_obstacles,
@@ -10,7 +8,7 @@ use game::{
 };
 use input::Input;
 use output::Screen;
-use types::{Direction, Grid, Tile, Snake};
+use types::{Direction, Grid, Snake, Tile};
 
 mod cli;
 mod game;
@@ -49,13 +47,13 @@ fn main() {
     draw_steps(&screen, steps);
     draw_snake_len(&screen, &snake);
 
-    let (tx, rx) = channel();
+    let (tx, rx) = mpsc::channel();
 
     // Spawn thread to handle ui input.
     input::handle(tx.clone());
-    
+
     // Spawn thread to send ticks.
-    send_ticks(tx, Arc::clone(&interval));
+    input::send_ticks(tx, Arc::clone(&interval));
 
     let mut direction = random_direction();
     let mut path: Vec<Direction> = Vec::new();
@@ -198,14 +196,4 @@ fn draw_steps(screen: &Screen, steps: u16) {
 
 fn draw_snake_len(screen: &Screen, snake: &Snake) {
     screen.draw_text_right(format!("Snake length: {}", snake.len()));
-}
-
-fn send_ticks(tx: Sender<Input>, interval: Arc<AtomicU16>) {
-    thread::spawn(move || loop {
-        thread::sleep(Duration::from_millis(
-            interval.load(atomic::Ordering::Relaxed).into(),
-        ));
-        tx.send(Input::Step).unwrap();
-    });
-
 }

@@ -1,5 +1,8 @@
+use std::sync::atomic::{self, AtomicU16};
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
 use std::thread;
+use std::time::Duration;
 
 use crate::types::Direction;
 use crossterm::event;
@@ -21,6 +24,16 @@ pub enum Input {
 pub fn handle(tx: Sender<Input>) {
     thread::spawn(move || loop {
         tx.send(read()).unwrap();
+    });
+}
+
+// Spawns a thread that sends Input::Step at the specified interval.
+pub fn send_ticks(tx: Sender<Input>, interval: Arc<AtomicU16>) {
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_millis(
+            interval.load(atomic::Ordering::Relaxed).into(),
+        ));
+        tx.send(Input::Step).unwrap();
     });
 }
 
