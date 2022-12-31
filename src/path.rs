@@ -1,4 +1,4 @@
-use crate::snake::next_point;
+use crate::game::next_point;
 use crate::types::{Direction, Grid, Point, Tile};
 use std::collections::HashSet;
 

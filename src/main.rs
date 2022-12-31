@@ -1,18 +1,22 @@
-use input::Input;
-use output::Screen;
-use snake::{create_grid, snake_direction, spawn_food, spawn_obstacles, spawn_snake};
 use std::sync::atomic::{self, AtomicU16};
-use std::sync::mpsc::channel;
+use std::sync::mpsc::{channel, Sender};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
+
+use game::{
+    create_grid, next_point, random_direction, snake_direction, spawn_food, spawn_obstacles,
+    spawn_snake,
+};
+use input::Input;
+use output::Screen;
 use types::{Direction, Grid, Tile};
 
 mod cli;
+mod game;
 mod input;
 mod output;
 mod path;
-mod snake;
 mod types;
 
 fn main() {
@@ -25,7 +29,8 @@ fn main() {
     if options.fit_grid {
         (grid_width, grid_height) = output::max_grid_size();
     }
-    let mut screen = Screen::new(grid_width, grid_height);
+
+    let interval = Arc::new(AtomicU16::new(options.interval));
 
     let mut end = false;
     let mut paused = false;
@@ -39,6 +44,7 @@ fn main() {
         spawn_obstacles(&mut grid, obstacle_count);
     }
 
+    let mut screen = Screen::new(grid_width, grid_height);
     draw_grid(&screen, &grid);
     screen.draw_text_left(format!("Steps: {}", steps));
     screen.draw_text_right(format!("Snake length: {}", snake.len()));
@@ -46,22 +52,12 @@ fn main() {
     let (tx, rx) = channel();
 
     // Spawn thread to handle ui input.
-    let ui_tx = tx.clone();
-    thread::spawn(move || loop {
-        ui_tx.send(input::read()).unwrap();
-    });
-
+    input::handle(tx.clone());
+    
     // Spawn thread to send ticks.
-    let interval = Arc::new(AtomicU16::new(options.interval));
-    let int_clone = Arc::clone(&interval);
-    thread::spawn(move || loop {
-        thread::sleep(Duration::from_millis(
-            int_clone.load(atomic::Ordering::Relaxed).into(),
-        ));
-        tx.send(Input::Step).unwrap();
-    });
+    send_ticks(tx, Arc::clone(&interval));
 
-    let mut direction = snake::random_direction();
+    let mut direction = random_direction();
     let mut path: Vec<Direction> = Vec::new();
 
     loop {
@@ -93,7 +89,7 @@ fn main() {
                     draw_grid(&screen, &grid);
                     screen.draw_text_left(format!("Steps: {}", steps));
                     screen.draw_text_right(format!("Snake length: {}", snake.len()));
-                    direction = snake::random_direction();
+                    direction = random_direction();
                     path = Vec::new();
                     continue;
                 }
@@ -129,7 +125,7 @@ fn main() {
                 }
 
                 // Return point in front of the snake in the given direction.
-                let p = snake::next_point(*head, direction);
+                let p = next_point(*head, direction);
                 let (x, y) = p;
 
                 // Check tile in the grid.
@@ -194,4 +190,14 @@ fn draw_grid(screen: &Screen, grid: &Grid) {
             screen.draw_tile((x, y), grid[x][y])
         }
     }
+}
+
+fn send_ticks(tx: Sender<Input>, interval: Arc<AtomicU16>) {
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_millis(
+            interval.load(atomic::Ordering::Relaxed).into(),
+        ));
+        tx.send(Input::Step).unwrap();
+    });
+
 }
