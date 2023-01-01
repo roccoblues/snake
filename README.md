@@ -43,4 +43,3 @@ Options:
 - [ ] countdown before start
 - [ ] release binaries
 - [ ] multiple snakes
-- [ ] don't spawn food in dead ends

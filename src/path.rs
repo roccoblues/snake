@@ -1,4 +1,4 @@
-use crate::game::next_point;
+use crate::game::{generate_successors, next_point};
 use crate::types::{Direction, Grid, Point, Tile};
 use std::collections::HashSet;
 
@@ -96,39 +96,6 @@ fn get_lowest_f(list: &mut HashSet<Point>, f_list: &[Vec<i32>]) -> Option<Point>
         list.remove(&p);
     }
     res
-}
-
-// Generates all valid successors of a point.
-//           N
-//           |
-//      W--Point--E
-//           |
-//           S
-fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
-    let grid_width = grid.len();
-    let grid_height = grid[0].len();
-
-    let mut successors: Vec<Point> = Vec::with_capacity(4);
-    let (x, y) = p;
-
-    // north
-    if x > 0 {
-        successors.push((x - 1, y));
-    }
-    // south
-    if x + 1 < grid_width {
-        successors.push((x + 1, y));
-    }
-    // east
-    if y + 1 < grid_height {
-        successors.push((x, y + 1));
-    }
-    // west
-    if y > 0 {
-        successors.push((x, y - 1))
-    }
-
-    successors
 }
 
 // Generates the path from the starting point to the target as a vector of directions.

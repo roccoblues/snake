@@ -32,8 +32,19 @@ pub fn spawn_food(grid: &mut Grid) -> Point {
 
 pub fn spawn_obstacles(grid: &mut Grid, count: u16) {
     for _ in 0..=count {
-        let (x, y) = random_empty_point(grid, 0);
-        grid[x][y] = Tile::Obstacle;
+        // avoid creating dead ends
+        'outer: loop {
+            let p = random_empty_point(grid, 0);
+            let (x, y) = p;
+            grid[x][y] = Tile::Obstacle;
+            for (a, b) in generate_successors(p, grid) {
+                if grid[a][b] == Tile::Free && is_in_dead_end(grid, (a, b)) {
+                    grid[x][y] = Tile::Free;
+                    continue 'outer;
+                }
+            }
+            break 'outer;
+        }
     }
 }
 
@@ -55,6 +66,19 @@ fn random_empty_point(grid: &Grid, distance: usize) -> Point {
     }
 
     *points.get(thread_rng().gen_range(0..points.len())).unwrap()
+}
+
+// Checks if point is in this shape: #p#
+//                                    #
+fn is_in_dead_end(grid: &Grid, p: Point) -> bool {
+    let mut free = 0;
+    for (x, y) in generate_successors(p, grid) {
+        if grid[x][y] == Tile::Free {
+            free += 1;
+        }
+    }
+
+    free < 2
 }
 
 pub fn random_direction() -> Direction {
@@ -83,5 +107,91 @@ pub fn next_point(p: Point, direction: Direction) -> Point {
         Direction::South => (x, y + 1),
         Direction::West => (x - 1, y),
         Direction::East => (x + 1, y),
+    }
+}
+
+// Generates all valid successors of a point.
+//           N
+//           |
+//      W--Point--E
+//           |
+//           S
+pub fn generate_successors(p: Point, grid: &Grid) -> Vec<Point> {
+    let mut successors: Vec<Point> = Vec::with_capacity(4);
+    let (x, y) = p;
+
+    if x > 0 {
+        successors.push(next_point(p, Direction::West));
+    }
+    if x + 1 < grid.len() {
+        successors.push(next_point(p, Direction::East));
+    }
+    if y + 1 < grid[0].len() {
+        successors.push(next_point(p, Direction::South));
+    }
+    if y > 0 {
+        successors.push(next_point(p, Direction::North))
+    }
+
+    successors
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_dead_end_empty() {
+        let grid = vec![vec![Tile::Free; 3]; 3];
+        assert!(!is_in_dead_end(&grid, (0, 0)));
+        assert!(!is_in_dead_end(&grid, (1, 1)));
+    }
+
+    #[test]
+    fn is_dead_end_with_obstacle() {
+        let mut grid = vec![vec![Tile::Free; 3]; 3];
+
+        // obstacle
+        grid[0][0] = Tile::Obstacle;
+        grid[2][0] = Tile::Obstacle;
+
+        // true
+        assert!(is_in_dead_end(&grid, (1, 0)));
+
+        // false
+        assert!(!is_in_dead_end(&grid, (0, 1)));
+        assert!(!is_in_dead_end(&grid, (0, 2)));
+        assert!(!is_in_dead_end(&grid, (1, 1)));
+        assert!(!is_in_dead_end(&grid, (1, 2)));
+        assert!(!is_in_dead_end(&grid, (2, 1)));
+        assert!(!is_in_dead_end(&grid, (2, 2)));
+    }
+
+    #[test]
+    fn is_dead_end_with_obstacle_and_border() {
+        let mut grid = vec![vec![Tile::Free; 4]; 4];
+
+        // border
+        grid[0][0] = Tile::Obstacle;
+        grid[1][0] = Tile::Obstacle;
+        grid[2][0] = Tile::Obstacle;
+        grid[3][0] = Tile::Obstacle;
+        grid[0][3] = Tile::Obstacle;
+        grid[1][3] = Tile::Obstacle;
+        grid[2][3] = Tile::Obstacle;
+        grid[3][3] = Tile::Obstacle;
+        grid[0][1] = Tile::Obstacle;
+        grid[0][2] = Tile::Obstacle;
+        grid[3][1] = Tile::Obstacle;
+        grid[3][2] = Tile::Obstacle;
+        // obstacle
+        grid[1][1] = Tile::Obstacle;
+        grid[3][1] = Tile::Obstacle;
+
+        // true
+        assert!(is_in_dead_end(&grid, (2, 1)));
+
+        // false
+        assert!(!is_in_dead_end(&grid, (2, 2)));
     }
 }
