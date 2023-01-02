@@ -1,12 +1,12 @@
-use crate::output;
 use clap::{ArgAction, Parser};
 
-pub const MIN_INTERVAL: i64 = 30;
+use crate::output;
+use crate::snake::{self, MIN_INTERVAL};
 
 /// Game of snake
 #[derive(Parser)]
 #[command(disable_help_flag = true)]
-pub struct Options {
+pub struct Opts {
     /// Snake advance interval in ms
     #[arg(short, long, default_value_t = 175, value_parser = clap::value_parser!(u16).range(MIN_INTERVAL..300))]
     pub interval: u16,
@@ -40,8 +40,18 @@ pub struct Options {
     pub help: (),
 }
 
-pub fn parse_options() -> Options {
-    Options::parse()
+impl From<Opts> for snake::Config {
+    fn from(opts: Opts) -> Self {
+        snake::Config {
+            autopilot: opts.autopilot,
+            arcade: opts.arcade,
+            grid_width: opts.grid_width,
+            grid_height: opts.grid_height,
+            fit_grid: opts.no_obstacles,
+            no_obstacles: opts.no_obstacles,
+            interval: opts.interval,
+        }
+    }
 }
 
 fn grid_width_in_range(s: &str) -> Result<u16, String> {

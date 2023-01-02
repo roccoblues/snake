@@ -1,3 +1,5 @@
+use crossterm::event;
+use crossterm::event::{Event, KeyCode};
 use std::sync::atomic::{self, AtomicU16};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
@@ -5,8 +7,6 @@ use std::thread;
 use std::time::Duration;
 
 use crate::types::Direction;
-use crossterm::event;
-use crossterm::event::{Event, KeyCode};
 
 #[repr(u8)]
 #[derive(Debug, Eq, PartialEq)]

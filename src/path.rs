@@ -1,6 +1,7 @@
-use crate::game::{generate_successors, next_point};
-use crate::types::{Direction, Grid, Point, Tile};
 use std::collections::HashSet;
+
+use crate::snake::{generate_successors, next_point};
+use crate::types::{Direction, Grid, Point, Tile};
 
 // Calculates a path from the start position to the target on the grid using the A* Search Algorithm.
 // The result is a vector of directions. If no path can be found an empty vector is returned.

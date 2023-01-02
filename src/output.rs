@@ -1,8 +1,9 @@
-use crate::types::{Point, Tile};
 use crossterm::style::{Attribute, Print, StyledContent, Stylize};
 use crossterm::terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::{cursor, execute, style};
 use std::io::stdout;
+
+use crate::types::{Point, Tile};
 
 pub const MIN_GRID_WIDTH: u16 = 12;
 pub const MIN_GRID_HEIGHT: u16 = 11;
