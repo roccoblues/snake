@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::snake::{generate_successors, next_point};
 use crate::types::{Direction, Grid, Point, Tile};
 
@@ -26,10 +24,11 @@ pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
     let mut closed = vec![vec![false; grid_height]; grid_width];
 
     // Create a open list to hold potential points of the path.
-    let mut open = HashSet::new();
+    // A value of true mean that the point is in the open list.
+    let mut open = vec![vec![false; grid_height]; grid_width];
 
-    // Put the starting point on the open list.
-    open.insert(start);
+    // Put the starting point on the open list with a f value of 0.
+    open[start_x][start_y] = true;
     f_list[start_x][start_y] = 0;
 
     // Pop the point with the lowest f value off the open list.
@@ -72,7 +71,7 @@ pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
                 parents[s_x][s_y] = Some(p);
 
                 // And push it on the open list.
-                open.insert(*s);
+                open[s_x][s_y] = true;
             }
         }
     }
@@ -83,18 +82,23 @@ pub fn find(grid: &Grid, start: Point, target: Point) -> Vec<Direction> {
 }
 
 // Finds the point with the lowest f value in the list and returns it.
-fn get_lowest_f(list: &mut HashSet<Point>, f_list: &[Vec<i32>]) -> Option<Point> {
+fn get_lowest_f(list: &mut [Vec<bool>], f_list: &[Vec<i32>]) -> Option<Point> {
     let mut lowest_f = i32::MAX;
     let mut res: Option<Point> = None;
-    for (x, y) in list.iter() {
-        let f = f_list[*x][*y];
-        if f < lowest_f {
-            lowest_f = f;
-            res = Some((*x, *y));
+    for (x, y_list) in list.iter().enumerate() {
+        for (y, value) in y_list.iter().enumerate() {
+            if !(*value) {
+                continue;
+            }
+            let f = f_list[x][y];
+            if f < lowest_f {
+                lowest_f = f;
+                res = Some((x, y));
+            }
         }
     }
-    if let Some(p) = res {
-        list.remove(&p);
+    if let Some((x, y)) = res {
+        list[x][y] = false
     }
     res
 }
