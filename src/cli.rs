@@ -47,7 +47,7 @@ impl From<Opts> for snake::Config {
             arcade: opts.arcade,
             grid_width: opts.grid_width,
             grid_height: opts.grid_height,
-            fit_grid: opts.no_obstacles,
+            fit_grid: opts.fit_grid,
             no_obstacles: opts.no_obstacles,
             interval: opts.interval,
         }
